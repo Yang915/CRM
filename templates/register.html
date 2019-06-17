@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'bootstrap-3.3.7-dist/css/bootstrap.min.css' %}">
+
+    <title>用户注册</title>
+</head>
+<body style="background-image: url('{% static 'images/register_bg.gif' %}');background-size: cover">
+<div class="container">
+    <div class="row">
+        <div class="col-xs-6 col-xs-offset-3" style="margin-top: 12%;">
+            <div class="container-fluid" style="background-color: rgba(255,255,255,0.2);border-radius: 5%">
+                <div class="row">
+                    <h2 class="text-left col-xs-8 text-primary">新用户注册：</h2>
+                </div>
+                <div class="row" >
+                    <form action="{% url 'register' %}" method="post" novalidate class="form-horizontal">
+                        {% csrf_token %}
+
+                        {% for field in register_obj %}
+                            <div class="form-group" >
+
+                                <label for="{{ field.id_for_label }}"
+                                       class="col-xs-3 control-label" >{{ field.label }}</label>
+                                <div class="col-xs-7">
+                                    {{ field }}
+                                    <div style="height: 10px;" class="text-danger">{{ field.errors.0 }}</div>
+                                </div>
+
+                            </div>
+
+
+
+                        {% endfor %}
+
+
+
+                        <div class="form-group">
+                            <div class="col-sm-7  col-xs-offset-3">
+                                <span class="col-xs-10 text-success text-center"
+                                      style="line-height: 200%">已有账号，请<a href="{% url 'login' %}">登录</a>！</span>
+                                <input type="submit" class="btn btn-success btn-sm col-xs-2 pull-right">
+
+                            </div>
+                        </div>
+
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+<script src="{% static 'jquery-3.4.1.js' %}"></script>
+<script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
+</html>

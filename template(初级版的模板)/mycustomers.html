@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+<!--左边的菜单栏-->
+{% block aside %}
+    <li><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a></li>
+    <li class="active"><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i> <span>我的客户</span></a></li>
+    <li><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
+    <li class="treeview">
+        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
+            <span class="pull-right-container">
+                <i class="fa fa-angle-left pull-right"></i>
+              </span>
+        </a>
+        <ul class="treeview-menu">
+            <li><a href="#">Link in level 2</a></li>
+            <li><a href="#">Link in level 2</a></li>
+        </ul>
+    </li>
+{% endblock %}
+
+
+<!--右边内容标题-->
+{% block title %}
+    <h1>
+        我的客户
+        <small>My Customers</small>
+    </h1>
+{#    <a href="{% url 'addcustomers' %}" class="btn btn-primary pull-right">添加客户</a>#}
+{% endblock %}
+
+
+
+<!--右边内容部分-->
+{% block content %}
+
+
+
+    <table class="table table-hover table-bordered table-responsive tab-content">
+        <thead>
+        <tr>
+            <th>序号</th>
+            <th>姓名</th>
+            <th>性别</th>
+            <th>客户来源</th>
+            <th>QQ</th>
+            <th>咨询课程</th>
+            <th>状态</th>
+            <th>已报班级</th>
+            <th>销售</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for customer_obj in customer_objs %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ customer_obj.name }}</td>
+                <td>{{ customer_obj.get_sex_display }}</td>
+                <td>{{ customer_obj.get_source_display }}</td>
+                <td>{{ customer_obj.qq }}</td>
+
+                <td>{{ customer_obj.course }}</td>
+                <td>{{ customer_obj.get_status_display }}</td>
+                <td>{{ customer_obj.get_classlist }}</td>
+                <td>{{ customer_obj.consultant.username }}</td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+    </div>
+
+
+{% endblock %}

@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'bootstrap-3.3.7-dist/css/bootstrap.min.css' %}">
+    <title>用户登录</title>
+</head>
+<body style="background-image: url('{% static "images/login_bg.jpg" %}');background-size: cover">
+<div>
+    <div class="container">
+        <div class="row">
+            <div class='col-xs-4 col-xs-offset-4'>
+                <div class="row" style="margin-top: 50%;background-color: rgba(255,255,255,0.2 );border-radius: 3%">
+                    <div class="row c1">
+                        <h2 class=" col-xs-6  text-primary" style="margin-bottom: 30px">用户登录</h2>
+                    </div>
+                    <div class="row">
+                        <div class="form-group" style="height: 60px;">
+                            <label for="username" class="col-xs-3 control-label text-right">用户名：</label>
+                            <div class="col-xs-8">
+                                <input type="text" class="form-control" id="username">
+                                <div class="text-danger"></div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="height: 60px;">
+                            <label for="password" class="col-xs-3 control-label text-right">密码：</label>
+                            <div class="col-xs-8">
+                                <input type="password" class="form-control" id="password">
+                                <div class="text-danger"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="height: 60px;">
+                            <label for="code" class="col-xs-3 control-label text-right">验证码：</label>
+                            <div class="col-xs-4">
+                                <input type="text" class="form-control" id="code">
+                                <div class="text-danger"></div>
+                            </div>
+                            <div class="col-xs-5" style="padding-left: 0"><img src="{% url 'get_cverification_code' %}"
+                                                                               alt="" id="cverification_code"></div>
+                        </div>
+
+                        <div class="form-group" style="height: 60px;">
+                            {% csrf_token %}
+                            <div class="col-xs-8 col-xs-offset-3">
+                                <a href="{% url 'register' %}">
+                                    <button class="btn btn-primary col-xs-offset-2" id="register">注册</button>
+                                </a>
+                                <button class="btn btn-success col-xs-offset-2" id="submit">登录</button>
+                                <div class=" text-danger"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+</body>
+<script src="{% static 'jquery-3.4.1.js' %}"></script>
+<script src="{% static 'jquery-cookie-1.4.1.js' %}"></script>
+<script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
+<script>
+    $(function () {
+        
+        $('#cverification_code').on('click',function () {
+            var src='{% url "get_cverification_code" %}?temp='+Math.random();
+            console.log(src);
+            $('#cverification_code').attr('src',src);
+        });
+        
+        
+        
+        $('#username').blur(function () {
+            if (username !== '') {
+                $('#username').next().text('');
+            }
+        });
+        $('#password').blur(function () {
+            if (username !== '') {
+                $('#password').next().text('');
+            }
+        });
+        $('#code').blur(function () {
+            if (username !== '') {
+                $('#code').next().text('');
+            }
+        });
+        $('#username').focus(function () {
+            if (username !== '') {
+                $('#submit').next().text('');
+            }
+        });
+        $('#password').focus(function () {
+            if (username !== '') {
+                $('#submit').next().text('');
+            }
+        });
+        $('#code').focus(function () {
+            if (username !== '') {
+                $('#code').next().text('');
+            }
+        });
+
+
+        $('#submit').click(function () {
+
+            var username = $('#username').val().trim();
+            var password = $('#password').val().trim();
+            var cverification_code = $('#code').val().trim();
+            console.log(cverification_code);
+            console.log(cverification_code.length);
+
+
+            if (username === '' || password === '' || cverification_code.length !== 6) {
+                if (username === '') {
+                    $('#username').next().text('用户名不能为空！');
+                }
+                ;
+                if (password === '') {
+                    $('#password').next().text('密码不能为空！')
+                }
+                ;
+                if (cverification_code.length !== 6) {
+                    $('#code').next().text('验证码为6位！');
+                }
+                ;
+                console.log(cverification_code.length);
+                if (cverification_code.length !== 6) {
+                    $('#code').next().text('验证码为6位！');
+                    return false
+                }
+                ;
+
+            } else {
+                $.ajax({
+                    url: '{% url 'login' %}',
+                    type: 'POST',
+                    headers: {'X-CSRFToken': $.cookie('csrftoken')},
+                    data: {
+                        'username': username,
+                        'password': password,
+                        'cverification_code': cverification_code,
+
+                    },
+                    success: function (request) {
+                        console.log(request);
+                        if (request.status === 1) {
+                            location.href = request.url;
+                        } else {
+                            $('#submit').next().text(request.url);
+                        }
+                    }
+
+                })
+            }
+
+        })
+    })
+</script>
+</html>

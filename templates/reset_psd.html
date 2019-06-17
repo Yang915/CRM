@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'bootstrap-3.3.7-dist/css/bootstrap.min.css' %}">
+    <title>修改密码</title>
+</head>
+<body>
+<div><h3>当前用户：{{ username }}</h3>
+
+        <p>请输入原密码：<input type="password" id="old_password"></p>
+        <P>请输入新密码：<input type="password" id="new_password"></P>
+        <p>请确认新密码：<input type="password" id="r_new_password"></p>
+        {% csrf_token %}
+        <p><button class="btn btn-success" id="submit">保存</button></p>
+
+</div>
+</body>
+<script src="{% static 'jquery-3.4.1.js' %}"></script>
+<script src="{% static 'jquery-cookie-1.4.1.js' %}"></script>
+<script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
+<script>
+    $(function () {
+        $('#submit').click(function () {
+            var old_password=$('#old_password').val().trim();
+            var new_password=$('#new_password').val().trim();
+            var r_new_password=$('#r_new_password').val().trim();
+
+            if(old_password===''||new_password==='' || r_new_password===''){
+                alert('不允许有空！');
+                return false
+            };
+
+            if(new_password!==r_new_password){
+                alert('两次输入的新密码不一致，请重新确认输入！');
+                return false
+            };
+
+
+            $.ajax({
+                url:'{% url "reset_psd" %}',
+                type:'post',
+                headers:{'X-CSRFToken':$.cookie('csrftoken')},
+                data:{
+                    old_password:old_password,
+                    new_password:new_password,
+                    r_new_password:r_new_password,
+                },
+                success:function (response) {
+                    if(response.status===true){
+                        alert(response.info);
+                        location.href=response.url;
+                    }
+                    else {
+                        alert(response.info)
+                    }
+                }
+
+            }
+            )
+        })
+    })
+</script>
+</html>

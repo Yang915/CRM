@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<!--左边的菜单栏-->
+{% block aside %}
+    <li><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a></li>
+    <li><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i> <span>我的客户</span></a></li>
+    <li class="active"><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
+    <li class="treeview">
+        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
+            <span class="pull-right-container">
+                <i class="fa fa-angle-left pull-right"></i>
+              </span>
+        </a>
+        <ul class="treeview-menu">
+            <li><a href="#">Link in level 2</a></li>
+            <li><a href="#">Link in level 2</a></li>
+        </ul>
+    </li>
+{% endblock %}
+
+
+<!--右边内容标题-->
+{% block title %}
+    <h1>
+        跟进记录
+        <small>Fllow record</small>
+
+    </h1>
+
+    <div class="row" style="margin-top: 15px;">
+
+        <!--添加客户-->
+        <a href="{% url 'addfollowrecord' %}" class="btn btn-primary btn-sm  col-xs-1 "
+           style="margin-left: 30px;width: 68px;height:28px">添加记录</a>
+
+
+        <!--批量操作:post请求当前路径-->
+        <div class="col-xs-6">
+            <!--批量操作选项-->
+            <select name="batch_operation" id="operation" style="height: 26px;">
+                <option value="">--操作--</option>
+                <option value="batch_delete">批量删除</option>
+                <option value="batch_update">批量修改</option>
+            </select>
+            <!--批量更新字段选择-->
+            <select name="" id="fields" style="height: 26px;" hidden="hidden">
+                {% for field in allfields %}
+                    {% if field.name in batch_update_fields_list %}
+                        <option value="{{ field.name }}">{{ field.label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <!--更新值选择-->
+
+            {% for field in allfields %}
+                {% if field.name in batch_update_fields_list %}
+                    <div id="{{ field.name }}" hidden class="c1 "
+                         style="width:180px;height: 26px;margin-bottom: 10px">{{ field }}</div>
+                {% endif %}
+            {% endfor %}
+
+
+            {% csrf_token %}
+            <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
+                    id="batch_operation">Go
+            </button>
+
+        </div>
+
+        <!--查询字段-->
+        <form action="" class=" col-xs-2 pull-right " method="get" style="padding-right: 0">
+            <select name="field" id="search" style="height: 25px;">
+                <option value="">--字段--</option>
+                {% for field in allfields %}
+                    {% if field.name in search_fields_list %}
+                        <option value="{{ field.name }}">{{ field.label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <input type="submit" value="查询">
+
+
+            {% for field in allfields %}
+                {% if field.name in search_fields_list %}
+                    <div class="c2 {{ field.name }}" id="{{ field.name }}" hidden
+                         style="width: 126px;">{{ field }}</div>
+                {% endif %}
+            {% endfor %}
+
+
+        </form>
+
+
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+
+
+
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>
+                <button class="btn btn-xs btn-primary" id="all">全选</button>
+                <button class="btn btn-xs btn-success" id="opp">反选</button>
+
+
+            <th>序号</th>
+            <th>咨询客户</th>
+            <th>跟进内容</th>
+            <th>跟进状态</th>
+            <th>跟进人</th>
+            <th>跟进日期</th>
+
+
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for follow_obj in follow_objs %}
+            <tr>
+                <td><input type="checkbox" name="select" value="{{ follow_obj.pk }}"></td>
+                <td>{{ forloop.counter }}</td>
+                <td class="{{ follow_obj.customer.pk }}">{{ follow_obj.customer }}</td>
+                <td>{{ follow_obj.note }}</td>
+                <td>{{ follow_obj.get_status_display }}</td>
+                <td>{{ follow_obj.consultant }}</td>
+                <td>{{ follow_obj.date|date:'Y-m-d' }}</td>
+
+                <td>
+                    <a href="{% url 'editfollowrecord' follow_obj.pk %}" class="btn btn-warning btn-xs">编辑</a>
+                    <a href="{% url 'deletefollowrecord' follow_obj.pk %}" class="btn btn-danger btn-xs">删除</a>
+                </td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+    <script src="{% static 'jquery-cookie-1.4.1.js' %}"></script>
+    <!--全选/反选-->
+    <script>
+        //全选操作
+        $('#all').click(function () {
+            $('input[name=select]').not('[disabled=disabled]').prop('checked', true);
+        });
+        //反选操作
+        $('#opp').click(function () {
+            var unchecked = $('input[name=select]:not(:checked)').not('[disabled=disabled]');
+            $('input[name=select]:checked').not('[disabled=disabled]').prop('checked', false);
+            unchecked.prop('checked', true)
+        });
+    </script>
+    <!--批量操作-->
+    <script>
+
+        //选择批量操作的条件
+        $('#operation').change(function () {
+            {#alert($('#operation').val());#}
+
+            if ($('#operation').val() === 'batch_update') {
+                $("#fields").attr('hidden', false);
+            } else {
+                $("#fields").attr('hidden', 'hidden');
+                $('.c1').attr('hidden', 'hidden');
+            }
+        });
+
+        $('#fields').change(function () {
+            var id = "#" + $('#fields').val();
+            $('.c1').attr('hidden', 'hidden');
+            $(id).attr('hidden', false);
+        });
+
+
+        //批量处理提交
+        $("#batch_operation").click(function () {
+            var operation = $("#operation").val();//获取批量操作类型
+            //alert(operation);
+            var selecteds = $('input[name=select]:checked');//获取已选中的数据
+            //console.log(selecteds);
+            //循环获取选中数据的value值添加到数组
+            var checked_id_list = [];
+            selecteds.each(function (index, obj) {//注意值和索引的顺序
+                //console.log(obj);
+                //console.log(val);
+                {#checked_id_list.push(obj.value);#}
+                checked_id_list.push($(obj).val());//注意each循环出来都是dom对象
+            });
+            console.log(checked_id_list);
+            console.log($("#" + $('#fields').val()).children('select').val());
+            //  批量操作提交确认
+            if (operation && checked_id_list.length) {
+
+                if (confirm('确定执行吗？')) {
+                    $.ajax({
+                        url: '{% url "followrecord" %}',
+                        type: 'post',
+                        headers: {'X-CSRFToken': $.cookie('csrftoken')},
+                        data: {
+                            operation: operation,
+                            id_list: JSON.stringify(checked_id_list),
+                            filed: $('#fields').val(),
+                            val: $("#" + $('#fields').val()).children('select').val(),
+                            //id_list:checked_id_list,
+                        },
+                        success: function (response) {
+                            var op = response.operaiton;
+                            var status = response.status;
+                            console.log(op);
+                            console.log(status);
+                            if (status === 1) {
+                                if (op === 'batch_delete') {
+                                    alert('批量删除成功！');
+                                }
+                                else if (op === 'batch_update') {
+                                    alert('批量更新成功！');
+                                }
+                                else if (op === 'batch_public_private') {
+                                    alert('公户转私户成功！');
+                                }
+                                else if (op === 'batch_private_public') {
+                                    alert('私户转公户成功！');
+                                }
+                                ;
+
+                                location.reload();
+                            } else {
+                                if (op !== '') {
+                                    alert('批量操作失败！')
+                                }
+                            }
+
+
+                        },
+                    });
+                }
+                ;
+            }
+
+        });
+
+    </script>
+    <!--搜索条件-->
+    <script>
+        //搜索框选择条件值
+        $('.c2').children().prop('disabled', 'disabled');
+        $("#search").change(function () {
+            var clas = "." + $("#search").val();
+            $('.c2').prop('hidden', 'hidden');
+            $('.c2').children().prop('disabled', 'disabled');
+            $(clas).prop('hidden', false);
+            $(clas).children().prop('disabled', false);
+        });
+    </script>
+    <!--跟进记录选择性禁用-->
+    <script>
+        //对跟进记录中的已经不再是私户的记录进行禁用操作（全选和反选进行了更改：排除禁用记录的选择）
+        var id_array ={{ idlist }};
+        for (var i in id_array) {
+            clas = "." + id_array[i];
+            $(clas).each(function (index, obj) {
+                $(obj).parent().find('input').attr('disabled', 'disabled');
+                $(obj).parent().find('a').attr('onclick', ' return false');
+                $(obj).parent().find('a').attr('title', '该咨询客户现已不是您的客户，无权操作！');
+            })
+        }
+
+
+    </script>
+{% endblock %}
+
+

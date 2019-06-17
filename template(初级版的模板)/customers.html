@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<!--左边的菜单栏-->
+{% block aside %}
+    <li class="active"><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a></li>
+    <li><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i> <span>我的客户</span></a></li>
+    <li><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
+    <li class="treeview">
+        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
+            <span class="pull-right-container">
+                <i class="fa fa-angle-left pull-right"></i>
+              </span>
+        </a>
+        <ul class="treeview-menu">
+            <li><a href="#">Link in level 2</a></li>
+            <li><a href="#">Link in level 2</a></li>
+        </ul>
+    </li>
+{% endblock %}
+
+
+<!--右边内容标题-->
+{% block title %}
+    <h1>
+        公共客户
+        <small>Customers</small>
+
+    </h1>
+
+    <div class="row" style="margin-top: 15px;">
+
+        <!--添加客户-->
+        <a href="{% url 'addcustomer' %}" class="btn btn-primary btn-sm  col-xs-1 "
+           style="margin-left: 30px;width: 68px;height:28px">添加客户</a>
+        <!--批量操作:post请求当前路径-->
+        <div class="col-xs-6">
+            <!--批量操作选项-->
+            <select name="batch_operation" id="operation" style="height: 26px;">
+                <option value="">--操作--</option>
+                <option value="batch_delete">批量删除</option>
+                <option value="batch_update">批量修改</option>
+                <option value="batch_public_private">公户转私户</option>
+                <option value="batch_private_public">私户转公户</option>
+            </select>
+
+            <!--批量更新字段选择-->
+            <select name="" id="fields" style="height: 26px;" hidden="hidden">
+                {% for field in allfields %}
+                    {% if field.name in fields_list %}
+                        <option value="{{ field.name }}">{{ field.label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <!--更新值选择-->
+
+            {% for field in allfields %}
+                {% if field.name in fields_list %}
+                    <div id="{{ field.name }}" hidden class="c1 " style="width:180px;height: 26px;">{{ field }}</div>
+                {% endif %}
+            {% endfor %}
+
+
+            {% csrf_token %}
+            <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
+                    id="batch_operation">Go
+            </button>
+
+        </div>
+        <!--查询字段-->
+        {#        <form action="{% url 'customers' %}" class="col-xs-4" method="get">#}
+        <form action="" class=" col-xs-4 pull-right" method="get" style="padding-right: 0"><!--还是提交当前页面的url路径，可以不写-->
+            <select name="field" id="" style="height: 25px;">
+                <option value="">--字段--</option>
+                <option value="name">姓名</option>
+                <option value="qq">QQ</option>
+            </select>
+            <input type="text" name="val">
+
+            <input type="submit" value="查询">
+        </form>
+
+
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+
+
+
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>
+                <button class="btn btn-xs btn-primary" id="all">全选</button>
+                <button class="btn btn-xs btn-success" id="opp">反选</button>
+
+
+            <th>序号</th>
+            <th>姓名</th>
+            <th>性别</th>
+            <th>客户来源</th>
+            <th>QQ</th>
+            <th>咨询课程</th>
+            <th>状态</th>
+            <th>已报班级</th>
+            <th>销售</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for customer_obj in customer_objs %}
+            <tr>
+                <td><input type="checkbox" name="select" value="{{ customer_obj.pk }}"></td>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ customer_obj.name }}</td>
+                <td>{{ customer_obj.get_sex_display }}</td>
+                <td>{{ customer_obj.get_source_display }}</td>
+                <td>{{ customer_obj.qq }}</td>
+
+                <td>{{ customer_obj.course }}</td>
+                <td>{{ customer_obj.get_status_display }}</td>
+                <td>{{ customer_obj.get_classlist|default:'----' }}</td>
+                <td>{{ customer_obj.consultant.username|default:'----' }}</td>
+                <td>
+                    <a href="{% url 'editcustomer' customer_obj.pk %}" class="btn btn-warning btn-xs">编辑</a>
+                    <a href="{% url 'deletecustomer' customer_obj.pk %}" class="btn btn-danger btn-xs">删除</a>
+                </td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+    <script src="{% static 'jquery-cookie-1.4.1.js' %}"></script>
+    <script>
+        //全选操作
+        $('#all').click(function () {
+            $('input[name=select]').prop('checked', true);
+        });
+        //反选操作
+        $('#opp').click(function () {
+            var unchecked = $('input[name=select]:not(:checked)');
+            $('input[name=select]:checked').prop('checked', false);
+            unchecked.prop('checked', true)
+        });
+
+
+        //选择批量操作的条件
+        $('#operation').change(function () {
+            {#alert($('#operation').val());#}
+
+            if ($('#operation').val() === 'batch_update') {
+                $("#fields").attr('hidden', false);
+            } else {
+                $("#fields").attr('hidden', 'hidden');
+                $('.c1').attr('hidden', 'hidden');
+            }
+        });
+
+        $('#fields').change(function () {
+            var id = "#" + $('#fields').val();
+            $('.c1').attr('hidden', 'hidden');
+            $(id).attr('hidden', false);
+        });
+
+
+        //批量处理提交
+        $("#batch_operation").click(function () {
+            var operation = $("#operation").val();//获取批量操作类型
+            //alert(operation);
+            var selecteds = $('input[name=select]:checked');//获取已选中的数据
+            //console.log(selecteds);
+            //循环获取选中数据的value值添加到数组
+            var checked_id_list = [];
+            selecteds.each(function (index, obj) {//注意值和索引的顺序
+                //console.log(obj);
+                //console.log(val);
+                {#checked_id_list.push(obj.value);#}
+                checked_id_list.push($(obj).val());//注意each循环出来都是dom对象
+            });
+            console.log(checked_id_list);
+            console.log($("#" + $('#fields').val()).children('select').val());
+            //  批量操作提交确认
+            if (operation && checked_id_list.length) {
+
+                if (confirm('确定执行吗？')) {
+                    $.ajax({
+                        url: '{% url "customers" %}',
+                        type: 'post',
+                        headers: {'X-CSRFToken': $.cookie('csrftoken')},
+                        data: {
+                            operation: operation,
+                            id_list: JSON.stringify(checked_id_list),
+                            filed: $('#fields').val(),
+                            val: $("#" + $('#fields').val()).children('select').val(),
+                            //id_list:checked_id_list,
+                        },
+                        success: function (response) {
+                            var op = response.operaiton;
+                            var status = response.status;
+                            console.log(op);
+                            console.log(status);
+                            if (status === 1) {
+                                if (op === 'batch_delete') {
+                                    alert('批量删除成功！');
+                                }
+                                else if (op === 'batch_update') {
+                                    alert('批量更新成功！');
+                                }
+                                else if (op === 'batch_public_private') {
+                                    alert('公户转私户成功！');
+                                }
+                                else if (op === 'batch_private_public') {
+                                    alert('私户转公户成功！');
+                                }
+                                ;
+
+                                location.reload();
+                            } else {
+                                if (op !== '') {
+                                    alert('批量操作失败！')
+                                }
+                            }
+
+
+                        },
+                    });
+                }
+                ;
+            }
+
+
+        });
+
+    </script>
+{% endblock %}
+
+
