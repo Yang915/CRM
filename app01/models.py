@@ -1,4 +1,4 @@
-from django.db import models
+
 
 # Create your models here.
 
@@ -11,6 +11,8 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils.translation import ugettext_lazy as _
 from multiselectfield import MultiSelectField
 # 安装:pip install django-multiselectfield,针对choices多选用的
+
+
 
 from django.utils.safestring import mark_safe
 
@@ -71,11 +73,36 @@ score_choices = ((100, 'A+'),
                  (-1000, 'FAIL'),)
 
 
+
+
 # 自定义的auth认证表
 class UserInfo(AbstractUser):
     # 销售,班主任,讲师,三哥
     telephone = models.CharField(max_length=32, null=True)
+    role=models.ManyToManyField(to='Role',verbose_name='角色',default=None,null=True,blank=True)
+#角色表
+class Role(models.Model):
+    name=models.CharField(max_length=32,verbose_name='角色')
+    permission=models.ManyToManyField(to='Permission',verbose_name='权限',null=True,blank=True)
+    def __str__(self):
+        return self.name
+#权限表
+class Permission(models.Model):
+    name=models.CharField(verbose_name='操作权限',max_length=32)
+    url=models.CharField(max_length=48,verbose_name='url路径')
+    # menu=models.BooleanField(default=False,verbose_name='是否为菜单')
+    # ico=models.CharField(max_length=32,verbose_name='图标',default='fa fa-link')
+    menu=models.ForeignKey(to='Menu',null=True,blank=True)#设置权限显示菜单归属于一级菜单的id,不为空的即为要显示的二级菜单
+    pid=models.ForeignKey(to='self',null=True,blank=True)#不同权限归属的显示菜单
 
+    def __str__(self):
+        return self.name
+#一级菜单表
+class Menu(models.Model):
+    name=models.CharField(max_length=12,verbose_name='一级菜单')
+    ico = models.CharField(max_length=32, verbose_name='一级菜单图标', default='fa fa-link')
+    def __str__(self):
+        return self.name
 
 # 客户表
 class Customer(models.Model):

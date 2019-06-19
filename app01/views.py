@@ -1,16 +1,16 @@
 from django.shortcuts import render, HttpResponse, redirect
-from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm#自定义的form组件
-from app01 import models#自定义的models模块
+from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm  # 自定义的form组件
+from app01 import models  # 自定义的models模块
 from django.http import JsonResponse  # Json响应数据类型
 from django.urls import reverse  # url反向解析
 from django.contrib import auth  # django内置认证系统
 from django.contrib.auth.decorators import login_required  # 认证装饰器
-from django.views import View#CBV模式必须继承的类
+from django.views import View  # CBV模式必须继承的类
 from django.utils.decorators import method_decorator  # CBV视图装饰器
-from django.db.models import Q#orm查询选择条件操作
-import json#序列化模块
-import sys#系统模块
-import re#正则
+from django.db.models import Q  # orm查询选择条件操作
+import json  # 序列化模块
+import sys  # 系统模块
+import re  # 正则
 
 
 # 注册
@@ -115,6 +115,71 @@ def login(request):
             print(user_obj)
             if user_obj:
                 auth.login(request, user_obj)
+                # 权限显示（一级菜单不划分归属）
+                """
+                user_permission_objs=models.Permission.objects.filter(role__userinfo__pk=request.user.pk).distinct()
+                
+                request.session['permission_list'] = [i.url for i in user_permission_objs]#注册权限
+                print(request.session['permission_list'])
+                
+                request.session['permission_menu_list'] = [{'url': i.url, 'ico': i.ico, 'label': i.name} for i user_permission_objs if i.menu]#注册显示菜单
+                print(request.session['permission_menu_list'])
+                """
+
+                # 权限归属划分（二级权限菜单划分归属一级菜单，存在问题：二级菜单内的操作时权限菜单显示异常）
+                """
+                user_role_permission_all=models.Permission.objects.filter(role__userinfo__pk=request.user.pk).distinct().values('pk','name','url','menu_id','menu__name','menu__ico')
+                permission_list = []#权限表
+                menu_level1_dict1_list={}#一级菜单
+                for item in user_role_permission_all:
+                    permission_list.append(item['url'])
+
+                    if item['menu_id']:
+                        if item['menu_id'] in menu_level1_list:
+                            menu_level1_dict[item['menu_id']]['menu_level2_list'].append({
+                                'name':item['name'],
+                                'url':item['url']
+                            } )
+                        else:
+                            menu_level1_dict[item['menu_id']]={
+                                'name':item['menu__name'],
+                                'ico':item['menu__ico'],
+                                'menu_level2_list':[{
+                                    'name':item['name'],
+                                    'url':item['url']
+                                } ]
+                            }
+
+
+                request.session['permission_list']=permission_list
+                request.session['menu_level1_dict']=menu_level1_dict
+                print(permission_list)
+                print(menu_level1_dict)
+                """
+
+                # 权限归属划分（重新修改permission表结构，进行权限归属显示菜单划分，在session中注入权限和归属菜单的pid,以便在菜单样式渲染时进行判断,注意中间件权限认证）
+                user_role_permission_all = models.Permission.objects.filter(
+                    role__userinfo__pk=request.user.pk).distinct().values('pk', 'name', 'url', 'pid_id', 'menu_id',
+                                                                          'menu__name', 'menu__ico')
+                permission_list = []
+                menu_level1_dict = {}
+                for item in user_role_permission_all:
+                    permission_list.append({'url': item['url'], 'pid': item['pid_id']})
+
+                    if item['menu_id']:
+                        if item['menu_id'] in menu_level1_dict:
+                            menu_level1_dict[item['menu_id']]['menu_level2_list'].append({'name':item['name'],'url':item['url'],'pk':item['pk']})
+                        else:
+                            menu_level1_dict[item['menu_id']] = {'name': item['menu__name'], 'ico': item['menu__ico'],
+                                                           'menu_level2_list':[{'name':item['name'],'url':item['url'],'pk':item['pk']}]
+                                                             }
+
+                request.session['permission_list']=permission_list
+                request.session['menu_level1_dict']=menu_level1_dict
+                # print('>>>>>>>>>>>>>>>',permission_list)
+                # print('>>>>>>>>>>>>>>>>>>>>>>>>>>',menu_level1_dict)
+
+
                 return JsonResponse({'status': 1, 'url': reverse('base')})
             else:
                 return JsonResponse({'status': 0, 'url': '账号或密码有误！'})
@@ -155,16 +220,8 @@ def reset_psd(request):
 
 
 # 进入系统页面
-@login_required
 def base(request):
     return render(request, 'base.html')
-
-
-'''
-# 状态认证的首页访问(使用装饰器认证状态失败，会自动跳转一个路径，可以在settings中配置指定LOGIN_URL='/login/')
-# 同时在页面的请求路径会自动加上'?next=/index/'(当前页面路径)，
-# 借此可以在前端通过location.search获取后slice切边获取路径，登录成功之后在success回调函数location.href指向该路径，自动跳转访问的页面
-'''
 
 
 # 批量删除操作
@@ -206,199 +263,8 @@ def batch_update(request, model):
         return 0
 
 
-
-
-
-
-"""
-'''
-# 获取公共客户(函数版)
-@login_required
-def customers(request):
-    print(request.user)
-    if request.method == 'GET':
-        customer_objs = models.Customer.objects.all().filter(consultant__isnull=True)  # 销售没有指定的都是公共客户
-        # 查询字段filed存在：
-        if request.GET.get('field'):
-            # 查询字段给了值进行筛选
-            if request.GET.get('val'):
-                field = request.GET.get('field')
-                val = request.GET.get('val')
-                q = Q()  # Q查询的另外用法
-                # q.connector='or'
-                # q.connector='and'#查询逻辑，连续append逻辑条件默认为and
-                q.children.append((field + '__contains', val))
-                customer_objs = customer_objs.filter(q)
-        # 导入分页模块
-        from app01 import page
-        per_page_counts = 10
-        page_number = 5
-        page_obj = page.PageNation(request.path,  # 当前路径
-                                   request.GET.get('page', 1),  # 当前页
-                                   customer_objs.count(),  # 信息总数量
-                                   request,  # 请求对象(查询使用)
-                                   per_page_counts,  # 每页显示信息数
-                                   page_number)  # 显示页码个数
-        customer_objs = customer_objs.order_by('-pk')[
-                        page_obj.start_num:page_obj.end_num]  # 实例化分页对象之后，返回有数据的起止位置，倒序排便于新增后在第一条显示
-        page = page_obj.page_html()  # 返回页码导航的具体html代码
-        return render(request, 'customers.html', {'customer_objs': customer_objs, 'page': page})
-'''
-
-
-# 获取公共客户(查询/批量处理)
-class Customers(View):
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        return super(Customers, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request):
-
-        customer_objs = models.Customer.objects.all().filter(consultant__isnull=True)  # 销售没有指定的都是公共客户
-        # customer_objs = models.Customer.objects.all().filter(consultant=None)
-        # 查询字段filed存在：
-        if request.GET.get('field'):
-            # 查询字段给了值进行筛选
-            if request.GET.get('val'):
-                field = request.GET.get('field')
-                val = request.GET.get('val')
-                q = Q()  # Q查询的另外用法
-                # q.connector='or'
-                # q.connector='and'#查询逻辑，连续append逻辑条件默认为and
-                q.children.append((field + '__contains', val))
-                customer_objs = customer_objs.filter(q)
-        # 导入分页模块
-        from app01 import page
-        per_page_counts = 8
-        page_number = 5
-        page_obj = page.PageNation(request.path,  # 当前路径
-                                   request.GET.get('page', 1),  # 当前页
-                                   customer_objs.count(),  # 信息总数量
-                                   request,  # 请求对象(查询使用)
-                                   per_page_counts,  # 每页显示信息数
-                                   page_number)  # 显示页码个数
-        customer_objs = customer_objs.order_by('-pk')[
-                        page_obj.start_num:page_obj.end_num]  # 实例化分页对象之后，返回有数据的起止位置，倒序排便于新增后在第一条显示
-        page = page_obj.page_html()  # 返回页码导航的具体html代码
-        return render(request, 'customers.html',
-                      {'customer_objs': customer_objs, 'page': page, 'allfields': CustomerModelForm(),
-                       'fields_list': ['sex', 'source', 'status', 'consultant']})
-
-    def post(self, request):
-        # print(request.POST)
-        # print(request.COOKIES)
-        operation = request.POST.get('operation', '')
-        id_list = request.POST.get('id_list', '')
-        # id_list=json.loads(id_list)
-        print(operation)
-        print('++++++++', id_list, type(id_list))
-
-        status = False
-        if operation and id_list:
-            if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
-                status = getattr(sys.modules[__name__], operation)(request, models.Customer)
-
-        return JsonResponse({'status': status, 'operaiton': operation})
-
-    # 批量删除后边都有的功能，可以抽象来写成公共函数
-    # def batch_delete(self,request):
-    #     id_list=json.loads(request.POST.get('id_list',''))
-    #     print('>>>>>>>>>',id_list)
-    #     ret=models.Customer.objects.filter(pk__in=id_list).delete()
-    #     print('>>>>',ret)
-    #     if ret:
-    #         return 1
-    #     else:
-    #         return 0
-
-    def batch_update(self, request):
-        id_list = json.loads(request.POST.get('id_list', ''))
-        print('----------===========+++++++', request.POST)
-        field = request.POST.get('filed')  # 获取更新字段为字符串（以下用**处理字典，或者用global()转）
-        val = request.POST.get('val')  # 获取值
-
-        ret = models.Customer.objects.filter(pk__in=id_list).update(**{field: val})  # 执行更新操作
-        print('>>>>', ret)
-        if ret:
-            return 1
-        else:
-            return 0
-
-# 客户添加/编辑操作（两个页面版本）
-'''
-# 新增客户信息（使用ModelForm）
-class AddCustomer(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-    def get(self, request):
-        print('add>>>', request.user)
-        customer_obj = CustomerModelForm()
-        return render(request, 'addcustomer.html', {'customer_obj': customer_obj})
-
-    def post(self, request):
-        data = request.POST
-        customer_obj = CustomerModelForm(data)  # 直接实例化对象，如果加了参数instance=对象，则在执行save时是update更新操作
-        if customer_obj.is_valid():
-            print(customer_obj.cleaned_data)
-            customer_obj.save()  # addcustomer_obj对象中指定instance则为更新，不指定则为创建
-            print("添加成功！")
-            return redirect('customers')
-        else:
-            return render(request, 'addcustomer.html', {'customer_obj': customer_obj})
-
-# 编辑客户信息
-class EditCustomer(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-    def get(self, request, id):
-        print(id)
-        editcustomer_obj = models.Customer.objects.filter(pk=id).first()
-        customer_obj = CustomerModelForm(instance=editcustomer_obj)
-        return render(request, 'editcustomer.html', {'customer_obj': customer_obj, 'pk': id})
-
-    def post(self, request, id):
-        editcustomer_obj = models.Customer.objects.filter(pk=id).first()
-        customer_obj = CustomerModelForm(request.POST, instance=editcustomer_obj)
-        if customer_obj.is_valid():
-            print(customer_obj.cleaned_data)
-            customer_obj.save()
-            return redirect('customers')
-        else:
-            return render(request, 'editcustomer.html', {'customer_obj': customer_obj, 'pk': id})
-'''
-
-
-# 获取私有客户
-@login_required
-def mycustomers(request):
-    if request.method == 'GET':
-        customer_objs = models.Customer.objects.all().filter(consultant=request.user)  # 基于对象的查询
-
-        from app01 import page
-        per_page_counts = 8
-        page_number = 5
-        page_obj = page.PageNation(request.path, request.GET.get('page', 1), customer_objs.count(), request,
-                                   per_page_counts,
-                                   page_number)
-        if customer_objs:
-            customer_objs = customer_objs[page_obj.start_num:page_obj.end_num]
-            page = page_obj.page_html()
-            return render(request, 'mycustomers.html', {'customer_objs': customer_objs, 'page': page})
-        else:
-            page = '<h1>当前信息为空！</h1>'
-            return render(request, 'mycustomers.html', {'customer_objs': customer_objs, 'page': page})
-"""
-
-
 # 获取公户/私户(查询/批量处理，一个页面public_private_customers.html)
 class Public_Private_Customers(View):
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     # 查询
     def get(self, request):
@@ -410,26 +276,11 @@ class Public_Private_Customers(View):
             flag = 1
             customer_objs = models.Customer.objects.all().filter(consultant=request.user)
 
-        print('ertyui__________++++++++++++++>>>>>>>>>>>>>',request.GET)
-        field=request.GET.get('field')
-        val=request.GET.get(field)
+        print('ertyui__________++++++++++++++>>>>>>>>>>>>>', request.GET)
+        field = request.GET.get('field')
+        val = request.GET.get(field)
         if field and val:
-            customer_objs=customer_objs.filter(**{field+'__contains':val})
-
-        # 查询字段filed存在：
-        # if request.GET.get('field'):
-        #     # 查询字段给了值进行筛选
-        #     if request.GET.get('val'):
-        #         field = request.GET.get('field')
-        #         val = request.GET.get('val')
-        #         q = Q()  # Q查询的另外用法
-        #         # q.connector='or'
-        #         # q.connector='and'#查询逻辑，连续append逻辑条件默认为and
-        #         q.children.append((field + '__contains', val))
-        #         customer_objs = customer_objs.filter(q)
-
-
-
+            customer_objs = customer_objs.filter(**{field + '__contains': val})
 
         if customer_objs:
             # 导入分页模块
@@ -449,7 +300,7 @@ class Public_Private_Customers(View):
                           {'customer_objs': customer_objs, 'page': page, 'flag': flag,
                            'allfields': CustomerModelForm(),
                            'batch_update_fields_list': ['sex', 'source', 'status', 'consultant'],
-                           'search_fields_list': ['name','qq','sex', 'source', 'status',  'consultant']})
+                           'search_fields_list': ['name', 'qq', 'sex', 'source', 'status', 'consultant']})
         else:
             page = '<h1>当前信息为空！</h1>'
             return render(request, 'public_private_customers.html',
@@ -474,32 +325,6 @@ class Public_Private_Customers(View):
 
         return JsonResponse({'status': status, 'operaiton': operation})
 
-    '''
-    # 批量删除后边都有的功能，可以抽象来写成公共函数
-    # def batch_delete(self,request):
-    #     id_list=json.loads(request.POST.get('id_list',''))
-    #     print('>>>>>>>>>',id_list)
-    #     ret=models.Customer.objects.filter(pk__in=id_list).delete()
-    #     print('>>>>',ret)
-    #     if ret:
-    #         return 1
-    #     else:
-    #         return 0
-    # 批量更新后边都有的功能，可以抽象来写成公共函数
-    # def batch_update(self, request):
-    #     id_list = json.loads(request.POST.get('id_list', ''))
-    #     print('----------===========+++++++', request.POST)
-    #     field = request.POST.get('filed')  # 获取更新字段为字符串（以下用**处理字典，或者用global()转）
-    #     val = request.POST.get('val')  # 获取值
-    #
-    #     ret = models.Customer.objects.filter(pk__in=id_list).update(**{field: val})  # 执行更新操作
-    #     print('>>>>', ret)
-    #     if ret:
-    #         return 1
-    #     else:
-    #         return 0
-    '''
-
     # 批量公户转私户
     def batch_public_private(self, request):
         id_list = json.loads(request.POST.get('id_list', ''))
@@ -523,9 +348,6 @@ class Public_Private_Customers(View):
 
 # 公户/私户：添加/编辑（一个页面add_edit_customer.html）
 class Add_Edit_Customer(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     # 获取添加/编辑页面add_edit_customer.html
     def get(self, request, id=None):
@@ -580,9 +402,6 @@ class Add_Edit_Customer(View):
 
 # 单个删除客户信息
 class Deletecustomer(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, id):
         print(id)
@@ -594,18 +413,8 @@ class Deletecustomer(View):
             return redirect("customers")
 
 
-
-
-
-
-
-
-
 # 获取跟进记录/:查询/批量操作
 class Followrecord(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, id=None):
         if request.method == 'GET':
@@ -614,17 +423,19 @@ class Followrecord(View):
                 follow_objs = models.ConsultRecord.objects.all().filter(customer_id=id)
             else:
                 follow_objs = models.ConsultRecord.objects.all().filter(consultant=request.user)  # 只看到自己的客户跟进
-                print('<<<<<<<<<<<<<<<<<<<<<',follow_objs)
+                print('<<<<<<<<<<<<<<<<<<<<<', follow_objs)
                 # follow_objs = models.ConsultRecord.objects.all().filter(consultant=request.user,customer__in=models.Customer.objects.filter(consultant=request.user))
-            #当前用户的客户对象id
-            allcustomer_idlist=[i.pk for i in models.Customer.objects.filter(consultant=request.user)]
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>', allcustomer_idlist)
-            #当前用户跟进记录中对应的所有客户对象id
-            allfollowrecord_idlist=[i.get('customer') for i in models.ConsultRecord.objects.filter(consultant=request.user).values('customer').distinct()]
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>',allfollowrecord_idlist)
+            # 当前用户的客户对象id
+            allcustomer_idlist = [i.pk for i in models.Customer.objects.filter(consultant=request.user)]
+            # print('>>>>>>>>>>>>>>>>>>>>>>>>>>>', allcustomer_idlist)
+            # 当前用户跟进记录中对应的所有客户对象id
+            allfollowrecord_idlist = [i.get('customer') for i in
+                                      models.ConsultRecord.objects.filter(consultant=request.user).values(
+                                          'customer').distinct()]
+            # print('>>>>>>>>>>>>>>>>>>>>>>>>>>>', allfollowrecord_idlist)
 
-            idlist=[i for i in allfollowrecord_idlist if i not in allcustomer_idlist]
-            print('>>>>>>>>>>>>>>>>>>>>>',idlist)
+            idlist = [i for i in allfollowrecord_idlist if i not in allcustomer_idlist]
+            # print('>>>>>>>>>>>>>>>>>>>>>', idlist)
 
             # field = request.GET.get('field', '')
             # val = request.GET.get('val', '')
@@ -636,7 +447,7 @@ class Followrecord(View):
             if field and val:
                 if field in ['customer']:
                     val = models.Customer.objects.filter(pk=val).first()
-                    follow_objs = follow_objs.filter(**{field : val})
+                    follow_objs = follow_objs.filter(**{field: val})
                 else:
                     follow_objs = follow_objs.filter(**{field + '__contains': val})
 
@@ -651,7 +462,8 @@ class Followrecord(View):
                 page = page_obj.page_html()
                 return render(request, 'follow_record.html',
                               {'follow_objs': customer_objs, 'page': page, 'allfields': FollowrecordModelForm(request),
-                               'batch_update_fields_list': ['status', ],'search_fields_list': ['customer','note','status', 'date',],'idlist':idlist})
+                               'batch_update_fields_list': ['status', ],
+                               'search_fields_list': ['customer', 'note', 'status', 'date', ], 'idlist': idlist})
             else:
                 page = '<h1>当前信息为空！</h1>'
                 return render(request, 'follow_record.html', {'follow_objs': follow_objs, 'page': page, })
@@ -669,58 +481,9 @@ class Followrecord(View):
                 status = getattr(sys.modules[__name__], operation)(request, models.ConsultRecord)
         return JsonResponse({'status': status, 'operaiton': operation})
 
-'''
-# # 添加跟进记录
-# class AddFollowrecord(View):
-#     @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-#     def dispatch(self, request, *args, **kwargs):
-#         return super().dispatch(request, *args, **kwargs)
-#
-#     def get(self, request):
-#
-#         followrecord_obj = FollowrecordModelForm(request)
-#         return render(request, 'addfollowrecord.html', {'followrecord_obj': followrecord_obj})
-#
-#     def post(self, request):
-#         data = request.POST
-#         followrecord_obj = FollowrecordModelForm(request,data)
-#         if followrecord_obj.is_valid():
-#             print(followrecord_obj.cleaned_data)
-#             followrecord_obj.save()  # addcustomer_obj对象中指定instance则为更新，不指定则为创建
-#             print("添加成功！")
-#             return redirect('followrecord')
-#         else:
-#             return render(request, 'addcustomer.html', {'followrecord_obj': followrecord_obj})
-#
-#
-# # 编辑跟进记录
-# class EditFollowrecord(View):
-#     @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-#     def dispatch(self, request, *args, **kwargs):
-#         return super().dispatch(request, *args, **kwargs)
-#
-#     def get(self, request, id):
-#         print(id)
-#         followrecord_obj = models.ConsultRecord.objects.filter(pk=id).first()
-#         followrecord_obj = FollowrecordModelForm(request,instance=followrecord_obj)
-#         return render(request, 'editfollowrecord.html', {'followrecord_obj': followrecord_obj, 'pk': id})
-#
-#     def post(self, request, id):
-#         followrecord_obj = models.ConsultRecord.objects.filter(pk=id).first()
-#         followrecord_obj = FollowrecordModelForm(request,request.POST, instance=followrecord_obj)
-#         if followrecord_obj.is_valid():
-#             print(followrecord_obj.cleaned_data)
-#             followrecord_obj.save()
-#             return redirect('followrecord')
-#         else:
-#             return render(request, 'editcustomer.html', {'followrecord_obj': followrecord_obj})
-'''
 
 # 添加/编辑跟进记录(一个页面add_edit_followrecord.html)
 class Add_Edit_Followrecord(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, id=None):
         followrecord_obj = models.ConsultRecord.objects.filter(pk=id).first()
@@ -750,9 +513,6 @@ class Add_Edit_Followrecord(View):
 
 # 单个删除跟进记录
 class DeleteFollowrecord(View):
-    @method_decorator(login_required)  # 对请求的每个函数都执行人认证
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, id):
         print(id)

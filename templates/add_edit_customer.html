@@ -1,23 +1,5 @@
 {% extends 'base.html' %}
-<!--左边的菜单栏-->
-{% block aside %}
-    <li {% if not flag_aside %}class="active" {% endif %}><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a>
-    </li>
-    <li {% if flag_aside %}class="active" {% endif %}><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i>
-        <span>我的客户</span></a></li>
-    <li><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
-    <li class="treeview">
-        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
-            <span class="pull-right-container">
-                <i class="fa fa-angle-left pull-right"></i>
-              </span>
-        </a>
-        <ul class="treeview-menu">
-            <li><a href="#">Link in level 2</a></li>
-            <li><a href="#">Link in level 2</a></li>
-        </ul>
-    </li>
-{% endblock %}
+
 
 
 <!--右边内容标题-->

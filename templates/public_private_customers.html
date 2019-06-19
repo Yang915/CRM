@@ -1,26 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
-<!--左边的菜单栏-->
-{% block aside %}
-    <li {% if not flag %}class="active" {% endif %}><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a>
-    </li>
-    <li {% if flag %}class="active" {% endif %}><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i>
-        <span>我的客户</span></a></li>
-    <li><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
-    <li class="treeview">
-        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
-            <span class="pull-right-container">
-                <i class="fa fa-angle-left pull-right"></i>
-              </span>
-        </a>
-        <ul class="treeview-menu">
-            <li><a href="#">Link in level 2</a></li>
-            <li><a href="#">Link in level 2</a></li>
-        </ul>
-    </li>
-{% endblock %}
-
+{% load permission %}
 
 <!--右边内容标题-->
 {% block title %}
@@ -41,58 +21,67 @@
         <!--添加客户-->
 
         {% if flag %}
-            <a href="{% url 'addmycustomer' %}" class="btn btn-primary btn-sm  col-xs-1 "
-               style="margin-left: 30px;width: 68px;height:28px">添加客户</a>
+            {% if 'addmycustomer'|permission_noarg:request %}
+                <a href="{% url 'addmycustomer' %}" class="btn btn-info btn-sm  col-xs-1 fa fa-user-plus "
+                   style="margin-left: 30px;height:28px" title="添加客户">添加客户</a>
+            {% endif %}
         {% else %}
-            <a href="{% url 'addcustomer' %}" class="btn btn-primary btn-sm  col-xs-1 "
-               style="margin-left: 30px;width: 68px;height:28px">添加客户</a>
+            {% if 'addcustomer'|permission_noarg:request %}
+                <a href="{% url 'addcustomer' %}" class="btn btn-info btn-sm  col-xs-1 fa fa-user-plus "
+                   style="margin-left: 30px;height:28px" title="添加客户">添加客户</a>
+            {% endif %}
         {% endif %}
 
 
 
         <!--批量操作:post请求当前路径-->
-        <div class="col-xs-6">
-            <!--批量操作选项-->
-            <select name="batch_operation" id="operation" style="height: 26px;">
-                <option value="">--操作--</option>
-                <option value="batch_delete">批量删除</option>
-                <option value="batch_update">批量修改</option>
-                {% if flag %}
-                    <option value="batch_private_public">私户转公户</option>
-                {% else %}
-                    <option value="batch_public_private">公户转私户</option>
-                {% endif %}
+        {% if 'editcustomer'|permission_arg:request or 'editmycustomer'|permission_arg:request %}<!--判断当前用户是否有权限，自定义过滤器
+            -->
 
 
-            </select>
+            <div class="col-xs-6">
+                <!--批量操作选项-->
+                <select name="batch_operation" id="operation" style="height: 26px;">
+                    <option value="">--操作--</option>
+                    <option value="batch_delete">批量删除</option>
+                    <option value="batch_update">批量修改</option>
+                    {% if flag %}
+                        <option value="batch_private_public">私户转公户</option>
+                    {% else %}
+                        <option value="batch_public_private">公户转私户</option>
+                    {% endif %}
 
-            <!--批量更新字段选择-->
-            <select name="" id="fields" style="height: 26px;" hidden="hidden">
+
+                </select>
+
+                <!--批量更新字段选择-->
+                <select name="" id="fields" style="height: 26px;" hidden="hidden">
+                    {% for field in allfields %}
+                        {% if field.name in batch_update_fields_list %}
+                            <option value="{{ field.name }}">{{ field.label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <!--更新值选择-->
+
                 {% for field in allfields %}
                     {% if field.name in batch_update_fields_list %}
-                        <option value="{{ field.name }}">{{ field.label }}</option>
+                        <div id="{{ field.name }}" hidden class="c1 "
+                             style="width:180px;height: 26px;margin-bottom: 10px">{{ field }}</div>
                     {% endif %}
                 {% endfor %}
-            </select>
-            <!--更新值选择-->
-
-            {% for field in allfields %}
-                {% if field.name in batch_update_fields_list %}
-                    <div id="{{ field.name }}" hidden class="c1 "
-                         style="width:180px;height: 26px;margin-bottom: 10px">{{ field }}</div>
-                {% endif %}
-            {% endfor %}
 
 
-            {% csrf_token %}
-            <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
-                    id="batch_operation">Go
-            </button>
+                {% csrf_token %}
+                <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
+                        id="batch_operation">Go
+                </button>
 
-        </div>
+            </div>
+        {% endif %}
 
         <!--查询字段-->
-        <form action="" class=" col-xs-2 pull-right " method="get" style="padding-right: 0">
+        <form action="" class=" col-xs-2 pull-right " method="get" style="padding-right: 0" novalidate>
             <select name="field" id="search" style="height: 25px;">
                 <option value="">--字段--</option>
                 {% for field in allfields %}
@@ -129,8 +118,8 @@
         <thead>
         <tr>
             <th>
-                <button class="btn btn-xs btn-primary" id="all">全选</button>
-                <button class="btn btn-xs btn-success" id="opp">反选</button>
+                <button class="btn btn-xs btn-primary" id="all" title="全选"><i class="fa fa-check-square-o"></i></button>
+                <button class="btn btn-xs btn-success" id="opp" title="反选"><i class="fa fa-check-square"></i></button>
 
 
             <th>序号</th>
@@ -142,8 +131,12 @@
             <th>状态</th>
             <th>已报班级</th>
             <th>销售</th>
-            <th>跟进</th>
-            <th>操作</th>
+            {% if 'morefollowrecord'|permission_arg:request %}
+                <th>跟进</th>
+            {% endif %}
+            {% if 'editmycustomer'|permission_arg:request or 'editcustomer'|permission_arg:request or 'deletemycustomer'|permission_arg:request or 'deletecustomer'|permission_arg:request %}
+                <th>操作</th>
+            {% endif %}
         </tr>
         </thead>
         <tbody>
@@ -160,23 +153,39 @@
                 <td>{{ customer_obj.get_status_display }}</td>
                 <td style="width: 160px;">{{ customer_obj.get_classlist|default:'----' }}</td>
                 <td>{{ customer_obj.consultant.username|default:'----' }}</td>
-                <td><a href="{% url 'morefollowrecord' customer_obj.pk %}">详情</a></td>
-                <td>
-                    {% if flag %}
-                        <a href="{% url 'editmycustomer' customer_obj.pk %}" class="btn btn-warning btn-xs">编辑</a>
-                    {% else %}
-                        <a href="{% url 'editcustomer' customer_obj.pk %}" class="btn btn-warning btn-xs">编辑</a>
-                    {% endif %}
+                {% if 'morefollowrecord'|permission_arg:request %}
+                    <td><a href="{% url 'morefollowrecord' customer_obj.pk %}">详情</a></td>
+                {% endif %}
+                {% if 'editmycustomer'|permission_arg:request or 'editcustomer'|permission_arg:request or 'deletemycustomer'|permission_arg:request or 'deletecustomer'|permission_arg:request %}
+                    <td>
+                        {% if flag %}
+                            {% if 'editmycustomer'|permission_arg:request %}
+                                <a href="{% url 'editmycustomer' customer_obj.pk %}" class="btn btn-warning btn-xs"
+                                   title="编辑"><i class="fa fa-edit"></i></a>
+                            {% endif %}
+                        {% else %}
+                            {% if 'editcustomer'|permission_arg:request %}
+                                <a href="{% url 'editcustomer' customer_obj.pk %}" class="btn btn-warning btn-xs"
+                                   title="编辑"><i
+                                        class="fa fa-edit"></i></a>
+                            {% endif %}
+                        {% endif %}
 
-                    {% if flag %}
-                        <a href="{% url 'deletemycustomer' customer_obj.pk %}" class="btn btn-danger btn-xs">删除</a>
-                    {% else %}
-                        <a href="{% url 'deletecustomer' customer_obj.pk %}" class="btn btn-danger btn-xs">删除</a>
-                    {% endif %}
+                        {% if flag %}
+                            {% if 'deletemycustomer'|permission_arg:request %}
+                                <a href="{% url 'deletemycustomer' customer_obj.pk %}" class="btn btn-danger btn-xs"
+                                   title="删除"><i class="fa fa-trash-o fa-lg"></i></a>
+                            {% endif %}
+                        {% else %}
+                            {% if 'deletecustomer'|permission_arg:request %}
+                                <a href="{% url 'deletecustomer' customer_obj.pk %}" class="btn btn-danger btn-xs"
+                                   title="删除"><i class="fa fa-trash-o fa-lg"> </i></a>
+                            {% endif %}
+                        {% endif %}
 
 
-                </td>
-
+                    </td>
+                {% endif %}
 
             </tr>
         {% endfor %}

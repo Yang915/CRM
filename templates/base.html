@@ -230,23 +230,24 @@
                 <li class="header">欢迎使用！</li>
 
                 <!-- Optionally, you can add icons to the links -->
-                {% block aside %}
-                    <li ><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a></li>
-                    <li><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i> <span>我的客户</span></a></li>
-                    <li><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
-                    <li><a href=""><i class="fa fa-link"></i> <span>报名表</span></a></li>
-                    <li class="treeview">
-                        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
-                            <span class="pull-right-container">
+
+                {% load menu %}
+                {% menu_tag request %}
+
+
+                <li class="treeview">
+                    <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
+                        <span class="pull-right-container">
                 <i class="fa fa-angle-left pull-right"></i>
               </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            <li><a href="#">Link in level 2</a></li>
-                            <li><a href="#">Link in level 2</a></li>
-                        </ul>
-                    </li>
-                {% endblock %}
+                    </a>
+
+                    <ul class="treeview-menu">
+                        <li><a href="#">Link in level 2</a></li>
+                        <li><a href="#">Link in level 2</a></li>
+                    </ul>
+                </li>
+
 
             </ul>
             <!-- /.sidebar-menu -->
@@ -391,18 +392,19 @@
 </body>
 
 <script>
-        $(function () {
-            function time() {
-                var t = new Date().toLocaleString();
-                $('li.header').text(t);
-                $('#time').text(t);
-            }
+    $(function () {
+        function time() {
+            var t = new Date().toLocaleString();
+            $('li.header').text(t);
+            $('#time').text(t);
+        }
 
-            var interval = setInterval(time, 1000);
+        var interval = setInterval(time, 1000);
 
-        });
+    });
 
-    </script>
+</script>
+
 
 
 {% block js %}

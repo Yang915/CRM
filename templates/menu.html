@@ -1,0 +1,30 @@
+{#{% for menu in menu_list %}#}
+{#    <li class="{{ menu.class }}"><a href="{{ menu.url }}"><i class="{{ menu.ico }}"></i>#}
+{#        <span>{{ menu.label }}</span></a></li>#}
+{#{% endfor %}#}
+
+
+<!--二级菜单：显示菜单的归属划分-->
+{% for menu_level1 in menu_list.values %}
+    <li class="{{ menu_level1.class }}">
+        <a href="#">
+            <i class="{{ menu_level1.ico }}"></i>
+            <span>{{ menu_level1.name }}</span>
+            <span class="pull-right-container">
+                    <i class="fa fa-angle-left pull-right"></i>
+                  </span>
+        </a>
+
+        <ul class="treeview-menu" style="padding-left: 20px;{% if menu_level1.flag %}display:block{% endif %}" >
+            {% for menu_level2 in menu_level1.menu_level2_list %}
+                <li class="{{ menu_level2.class }}"><a href="{{ menu_level2.url }}">{{ menu_level2.name }}</a></li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endfor %}
+
+
+
+
+
+

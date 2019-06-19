@@ -1,24 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-<!--左边的菜单栏-->
-{% block aside %}
-    <li><a href="{% url 'customers' %}"><i class="fa fa-table"></i> <span>公共客户</span></a></li>
-    <li><a href="{% url 'mycustomers' %}"><i class="fa fa-link"></i> <span>我的客户</span></a></li>
-    <li class="active"><a href="{% url 'followrecord' %}"><i class="fa fa-link"></i> <span>跟进记录</span></a></li>
-    <li class="treeview">
-        <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
-            <span class="pull-right-container">
-                <i class="fa fa-angle-left pull-right"></i>
-              </span>
-        </a>
-        <ul class="treeview-menu">
-            <li><a href="#">Link in level 2</a></li>
-            <li><a href="#">Link in level 2</a></li>
-        </ul>
-    </li>
-{% endblock %}
-
 
 <!--右边内容标题-->
 {% block title %}
@@ -28,45 +10,52 @@
 
     </h1>
 
-    <div class="row" style="margin-top: 15px;">
 
-        <!--添加客户-->
-        <a href="{% url 'addfollowrecord' %}" class="btn btn-primary btn-sm  col-xs-1 "
-           style="margin-left: 30px;width: 68px;height:28px">添加记录</a>
+    <div class="row" style="margin-top: 15px;">
+        {% load permission %}
+        {% if 'addfollowrecord'|permission_noarg:request %}
+            <!--添加客户-->
+            <a href="{% url 'addfollowrecord' %}" class="btn btn-primary btn-sm  col-xs-1 "
+               style="margin-left: 30px;width: 68px;height:28px">添加记录</a>
+        {% endif %}
 
 
         <!--批量操作:post请求当前路径-->
-        <div class="col-xs-6">
-            <!--批量操作选项-->
-            <select name="batch_operation" id="operation" style="height: 26px;">
-                <option value="">--操作--</option>
-                <option value="batch_delete">批量删除</option>
-                <option value="batch_update">批量修改</option>
-            </select>
-            <!--批量更新字段选择-->
-            <select name="" id="fields" style="height: 26px;" hidden="hidden">
+        {% if 'editfollowrecord'|permission_arg:request %}<!--判断当前用户是否有权限，自定义过滤器-->
+            <div class="col-xs-6">
+                <!--批量操作选项-->
+                <select name="batch_operation" id="operation" style="height: 26px;">
+                    <option value="">--操作--</option>
+                    <option value="batch_delete">批量删除</option>
+                    <option value="batch_update">批量修改</option>
+                </select>
+                <!--批量更新字段选择-->
+                <select name="" id="fields" style="height: 26px;" hidden="hidden">
+                    <option value="">--操作--</option>
+                    {% for field in allfields %}
+                        {% if field.name in batch_update_fields_list %}
+                            <option value="{{ field.name }}">{{ field.label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <!--更新值选择-->
+
                 {% for field in allfields %}
                     {% if field.name in batch_update_fields_list %}
-                        <option value="{{ field.name }}">{{ field.label }}</option>
+                        <div id="{{ field.name }}" hidden class="c1 "
+                             style="width:165px;height: 26px;margin-bottom: 10px">{{ field }}</div>
                     {% endif %}
                 {% endfor %}
-            </select>
-            <!--更新值选择-->
-
-            {% for field in allfields %}
-                {% if field.name in batch_update_fields_list %}
-                    <div id="{{ field.name }}" hidden class="c1 "
-                         style="width:180px;height: 26px;margin-bottom: 10px">{{ field }}</div>
-                {% endif %}
-            {% endfor %}
 
 
-            {% csrf_token %}
-            <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
-                    id="batch_operation">Go
-            </button>
+                {% csrf_token %}
+                <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
+                        id="batch_operation">Go
+                </button>
 
-        </div>
+            </div>
+        {% endif %}
+
 
         <!--查询字段-->
         <form action="" class=" col-xs-2 pull-right " method="get" style="padding-right: 0">
@@ -106,8 +95,8 @@
         <thead>
         <tr>
             <th>
-                <button class="btn btn-xs btn-primary" id="all">全选</button>
-                <button class="btn btn-xs btn-success" id="opp">反选</button>
+                <button class="btn btn-xs btn-primary" id="all" title="全选"><i class="fa fa-check-square-o"></i></button>
+                <button class="btn btn-xs btn-success" id="opp" title="反选"><i class="fa fa-check-square"></i></button>
 
 
             <th>序号</th>
@@ -116,9 +105,9 @@
             <th>跟进状态</th>
             <th>跟进人</th>
             <th>跟进日期</th>
-
-
-            <th>操作</th>
+            {% if 'editfollowrecord'|permission_arg:request  or 'deletefollowrecord'|permission_arg:request %}
+                <th>操作</th>
+            {% endif %}
         </tr>
         </thead>
         <tbody>
@@ -131,11 +120,20 @@
                 <td>{{ follow_obj.get_status_display }}</td>
                 <td>{{ follow_obj.consultant }}</td>
                 <td>{{ follow_obj.date|date:'Y-m-d' }}</td>
-
-                <td>
-                    <a href="{% url 'editfollowrecord' follow_obj.pk %}" class="btn btn-warning btn-xs">编辑</a>
-                    <a href="{% url 'deletefollowrecord' follow_obj.pk %}" class="btn btn-danger btn-xs">删除</a>
-                </td>
+                {% if 'editfollowrecord'|permission_arg:request  or 'deletefollowrecord'|permission_arg:request %}
+                    <td>
+                        {% if 'editfollowrecord'|permission_arg:request %}
+                            <a href="{% url 'editfollowrecord' follow_obj.pk %}" class="btn btn-warning btn-xs"
+                               title="编辑"><i
+                                    class="fa fa-edit "></i></a>
+                        {% endif %}
+                        {% if 'deletefollowrecord'|permission_arg:request %}
+                            <a href="{% url 'deletefollowrecord' follow_obj.pk %}" class="btn btn-danger btn-xs"
+                               title="删除"><i
+                                    class="fa fa-trash-o fa-lg "></i></a>
+                        {% endif %}
+                    </td>
+                {% endif %}
             </tr>
         {% endfor %}
 

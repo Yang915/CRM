@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'app01.middlewares.PermissionMiddleware',
 ]
 
 ROOT_URLCONF = 'crm01.urls'
@@ -73,7 +74,7 @@ WSGI_APPLICATION = 'crm01.wsgi.application'
 
 
 AUTH_USER_MODEL='app01.UserInfo'#自定义auth认证表
-LOGIN_URL='/login/'#指定认证失败的请求路径
+# LOGIN_URL='/login/'#指定认证失败的请求路径
 
 
 # Database
