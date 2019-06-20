@@ -1,5 +1,5 @@
 from django.shortcuts import render, HttpResponse, redirect
-from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm  # 自定义的form组件
+from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm, StudentModelForm ,TeachModelForm,StudyModelForm # 自定义的form组件
 from app01 import models  # 自定义的models模块
 from django.http import JsonResponse  # Json响应数据类型
 from django.urls import reverse  # url反向解析
@@ -24,14 +24,14 @@ def register(request):
         register_obj = RegisterForm(data)
         if register_obj.is_valid():
             user_obj = register_obj.cleaned_data
-            print(user_obj)
+            # print(user_obj)
             username = user_obj.get('name')
             password = user_obj.get('password')
             email = user_obj.get('email')
 
             if not models.UserInfo.objects.filter(username=username).exists():
                 new_obj = models.UserInfo.objects.create_user(username=username, password=password, email=email)
-                print(f'新用户{username}注册成功！')
+                # print(f'新用户{username}注册成功！')
                 return redirect('login')
             else:
                 register_obj.add_error('name', '用户名已存在！')
@@ -58,7 +58,7 @@ def get_cverification_code(request):
     draw_obj = ImageDraw.Draw(img_obj)  # 创建图片
 
     font_path = os.path.join(settings.BASE_DIR, r'static_files\fonts\BRUX.otf')  # 字体路径（字体自己下载）
-    print('>>>>', font_path)
+    # print('>>>>', font_path)
     # font_obj = ImageFont.true type(font_path, 26)#路径拼接注意不能有中文，否则报错
     font_obj = ImageFont.truetype(r'static_files/fonts/BRUX.otf', 26)  # 相对路径r'static_files/fonts/BRUX.otf'
     # font_obj = ImageFont.load_default().font#系统默认字体
@@ -67,7 +67,7 @@ def get_cverification_code(request):
         a = random.choice([str(random.randint(0, 9)), chr(random.randint(97, 122)),
                            chr(random.randint(65, 90))])  # 4  a  5  D  6  S
         sum_str += a
-    print(sum_str)
+    print('验证码>>>', sum_str)
     draw_obj.text((12, 2), sum_str, fill=get_random_color(), font=font_obj)
 
     width = 120
@@ -164,21 +164,24 @@ def login(request):
                 permission_list = []
                 menu_level1_dict = {}
                 for item in user_role_permission_all:
-                    permission_list.append({'url': item['url'], 'pid': item['pid_id']})
+                    permission_list.append(
+                        {'url': item['url'], 'pid': item['pid_id'], 'name': item['name'], 'pk': item['pk']})
 
                     if item['menu_id']:
                         if item['menu_id'] in menu_level1_dict:
-                            menu_level1_dict[item['menu_id']]['menu_level2_list'].append({'name':item['name'],'url':item['url'],'pk':item['pk']})
+                            menu_level1_dict[item['menu_id']]['menu_level2_list'].append(
+                                {'name': item['name'], 'url': item['url'], 'pk': item['pk']})
                         else:
                             menu_level1_dict[item['menu_id']] = {'name': item['menu__name'], 'ico': item['menu__ico'],
-                                                           'menu_level2_list':[{'name':item['name'],'url':item['url'],'pk':item['pk']}]
-                                                             }
+                                                                 'menu_level2_list': [
+                                                                     {'name': item['name'], 'url': item['url'],
+                                                                      'pk': item['pk']}]
+                                                                 }
 
-                request.session['permission_list']=permission_list
-                request.session['menu_level1_dict']=menu_level1_dict
+                request.session['permission_list'] = permission_list
+                request.session['menu_level1_dict'] = menu_level1_dict
                 # print('>>>>>>>>>>>>>>>',permission_list)
                 # print('>>>>>>>>>>>>>>>>>>>>>>>>>>',menu_level1_dict)
-
 
                 return JsonResponse({'status': 1, 'url': reverse('base')})
             else:
@@ -233,9 +236,9 @@ def batch_delete(request, model):
     :return:返回处理状态
     '''
     id_list = json.loads(request.POST.get('id_list', ''))
-    print('>>>>>>>>>', id_list)
+    # print('>>>>>>>>>', id_list)
     ret = model.objects.filter(pk__in=id_list).delete()
-    print('>>>>', ret)
+    # print('>>>>', ret)
     if ret:
         return 1
     else:
@@ -254,6 +257,9 @@ def batch_update(request, model):
     print('----------===========+++++++', request.POST)
     field = request.POST.get('filed')  # 获取更新字段为字符串（以下用**处理字典，或者用global()转）
     val = request.POST.get('val')  # 获取值
+    print(id_list)
+    print(field)
+    print(val)
 
     ret = model.objects.filter(pk__in=id_list).update(**{field: val})  # 执行更新操作
     print('>>>>', ret)
@@ -276,7 +282,7 @@ class Public_Private_Customers(View):
             flag = 1
             customer_objs = models.Customer.objects.all().filter(consultant=request.user)
 
-        print('ertyui__________++++++++++++++>>>>>>>>>>>>>', request.GET)
+        # print('__________++++++++++++++>>>>>>>>>>>>>', request.GET)
         field = request.GET.get('field')
         val = request.GET.get(field)
         if field and val:
@@ -314,7 +320,7 @@ class Public_Private_Customers(View):
         id_list = request.POST.get('id_list', '')
         # id_list=json.loads(id_list)
         print(operation)
-        print('++++++++', id_list, type(id_list))
+        # print('++++++++', id_list, type(id_list))
 
         status = False
         if operation and id_list:
@@ -473,15 +479,13 @@ class Followrecord(View):
         operation = request.POST.get('operation', '')
         id_list = request.POST.get('id_list', '')
         # id_list=json.loads(id_list)
-        print(operation)
-        print('++++++++', id_list, type(id_list))
+        # print(operation)
+        # print('++++++++', id_list, type(id_list))
         status = False
         if operation and id_list:
             if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
                 status = getattr(sys.modules[__name__], operation)(request, models.ConsultRecord)
         return JsonResponse({'status': status, 'operaiton': operation})
-
-
 # 添加/编辑跟进记录(一个页面add_edit_followrecord.html)
 class Add_Edit_Followrecord(View):
 
@@ -504,17 +508,392 @@ class Add_Edit_Followrecord(View):
             flag = 0
         followrecord_obj = FollowrecordModelForm(request, request.POST, instance=followrecord_obj)
         if followrecord_obj.is_valid():
-            print(followrecord_obj.cleaned_data)
+            # print(followrecord_obj.cleaned_data)
             followrecord_obj.save()
             return redirect('followrecord')
         else:
             return render(request, 'add_edit_followrecord.html', {'followrecord_obj': followrecord_obj, 'flag': flag})
-
-
 # 单个删除跟进记录
 class DeleteFollowrecord(View):
 
     def get(self, request, id):
-        print(id)
+        # print(id)
         models.ConsultRecord.objects.filter(pk=id).delete()
         return redirect('followrecord')
+
+
+# 学生信息
+class Student(View):
+    def get(self, request):
+        student_objs = models.Student.objects.all()
+
+        print('fydgusopdghdpfs[gopsaoospjak[jofghps')
+
+        # 查询
+        field = request.GET.get('field')
+        val = request.GET.get(field)
+        if field and val:
+            if field in ['customer', ]:
+
+                student_objs = models.Student.objects.filter(**{field: val})
+
+            else:
+
+                student_objs = models.Student.objects.filter(**{field + '__contains': val})
+
+        searchfields = ['customer', 'company', 'position', 'date']
+        batch_update_fields_list = ['date','position']
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), student_objs.count(), request,
+                                   per_page_counts, page_number)
+        student_objs = student_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if  student_objs:
+
+            return render(request, 'student.html',
+                          {"student_objs": student_objs, 'page': page_, 'allfields': StudentModelForm(),
+                           'search_fields_list': searchfields, 'batch_update_fields_list': batch_update_fields_list})
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'student.html', {'student_objs': student_objs, 'page': page, })
+
+    def post(self, request):
+        operation = request.POST.get('operation', '')
+        id_list = request.POST.get('id_list', '')
+
+        status = False
+        if operation and id_list:
+            if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
+                status = getattr(sys.modules[__name__], operation)(request, models.Student)
+        return JsonResponse({'status': status, 'operaiton': operation})
+class Add_Edit_Student(View):
+    def get(self, request, id=None):
+        obj = models.Student.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+            print(obj)
+        student_obj = StudentModelForm(instance=obj)
+        return render(request, 'add_edit_student.html', {"student_obj": student_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.Student.objects.filter(pk=id).first()
+        # print('>>>>>>', obj)
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        student_obj = StudentModelForm(request.POST, instance=obj)
+        if student_obj.is_valid():
+            # print(student_obj.cleaned_data)
+            student_obj.save()
+            return redirect('student')
+        else:
+            return render(request, 'add_edit_student.html', {"student_obj": student_obj, 'flag': flag})
+class DeleteStudent(View):
+    def get(self, request, id):
+        models.Student.objects.filter(pk=id).delete()
+        return redirect('student')
+
+
+# 教学信息
+class Teach(View):
+    def get(self, request):
+        teach_objs = models.ClassStudyRecord.objects.all()
+
+        # 查询
+        # field = request.GET.get('field')
+        # val = request.GET.get(field)
+        # if field and val:
+        #     if field in ['customer', ]:
+        #
+        #         teach_objs = models.ClassStudyRecord.objects.filter(**{field: val})
+        #
+        #     else:
+        #
+        #         teach_objs = models.ClassStudyRecord.objects.filter(**{field + '__contains': val})
+
+        #查询字段
+        searchfields = ['customer', 'company', 'position', 'date']
+
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), teach_objs.count(), request,
+                                   per_page_counts, page_number)
+        teach_objs = teach_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if  teach_objs:
+
+            return render(request, 'teach.html',
+                          {"teach_objs": teach_objs, 'page': page_, 'allfields': TeachModelForm(),
+                           'search_fields_list': searchfields, })
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'student.html', {'teach_objs': teach_objs, 'page': page, })
+
+    def post(self, request):
+        operation = request.POST.get('operation', '')
+        id_list = request.POST.get('id_list', '')
+
+        status = False
+        if operation and id_list:
+            if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
+                status = getattr(sys.modules[__name__], operation)(request, models.ClassStudyRecord)
+            elif hasattr(self,operation) and callable(getattr(self,operation)):
+                status=getattr(self,operation)(request)
+        return JsonResponse({'status': status, 'operaiton': operation})
+
+    def batch_create_studentstudyrecord(self,request):
+        id_list=json.loads(request.POST.get('id_list', ''))
+        id_list =[int(i) for i in id_list]
+        teach_objs=models.ClassStudyRecord.objects.filter(pk__in=id_list)
+        try:
+            study_obj_list=[]
+            for teach_obj in teach_objs:
+                students_objs=models.Student.objects.filter(class_list=teach_obj.class_obj)
+                for students_obj in students_objs:
+                    study_obj=models.StudentStudyRecord(student=students_obj,classstudyrecord=teach_obj)
+                    study_obj_list.append(study_obj)
+                models.StudentStudyRecord.objects.bulk_create(study_obj_list)
+        except Exception as e:
+            print(e)
+            return 0
+        else:
+            return 1
+
+class Add_Edit_Teach(View):
+    def get(self, request, id=None):
+        obj = models.ClassStudyRecord.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+            print(obj)
+        teach_obj = TeachModelForm(instance=obj)
+        return render(request, 'add_edit_teach.html', {"teach_obj": teach_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.ClassStudyRecord.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        teach_obj = TeachModelForm(request.POST, instance=obj)
+        if teach_obj.is_valid():
+
+            teach_obj.save()
+            return redirect('teach')
+        else:
+            return render(request, 'add_edit_teach.html', {"teach_obj": teach_obj, 'flag': flag})
+class DeleteTeach(View):
+    def get(self, request, id):
+        models.ClassStudyRecord.objects.filter(pk=id).delete()
+        return redirect('teach')
+
+
+
+
+#学习情况详情（原生版）
+# class Studydetail(View):
+#     def get(self,request,ClassStudyRecord_id):
+#         class_obj=models.ClassStudyRecord.objects.get(pk=ClassStudyRecord_id)
+#         study_objs=models.StudentStudyRecord.objects.filter(classstudyrecord=class_obj)
+#         title=f'{class_obj.date}{class_obj.class_obj}第{class_obj.day_num}节次'
+#         record_choices=models.StudentStudyRecord.record_choices
+#         score_choices=models.StudentStudyRecord.score_choices
+#         # print(record_choices)
+#
+#         per_page_counts = 8
+#         page_number = 5
+#         from app01 import page  # 导入分页
+#         page_obj = page.PageNation(request.path, request.GET.get('page', 1), study_objs.count(), request,
+#                                    per_page_counts, page_number)
+#         study_objs = study_objs[page_obj.start_num:page_obj.end_num]
+#         page_ = page_obj.page_html()
+#
+#         if study_objs:
+#             return render(request, 'studydeatil.html', {"study_objs": study_objs, 'record_choices':record_choices,'score_choices':score_choices, 'page': page_,'title':title})
+#         else:
+#             page = '<h1>当前信息为空！</h1>'
+#             return render(request, 'studydeatil.html', {'study_objs': study_objs, 'page': page, 'title':title})
+#
+#     def post(self,request,ClassStudyRecord_id):
+#         print(request.POST)
+#         study_objs=request.POST
+#         # for field,val in study_objs.items():
+#         #     if field=='csrfmiddlewaretoken':
+#         #         continue
+#         #     field,study_obj_id=field.rsplit('_',1)
+#         #     models.StudentStudyRecord.objects.filter(pk=ClassStudyRecord_id).update(**{field:val})
+#
+#         study_obj_dict={}
+#         for field,val in study_objs.items():
+#             if field=='csrfmiddlewaretoken':
+#                 continue
+#             field,study_obj_id=field.rsplit('_',1)
+#             if study_obj_id in study_obj_dict:
+#                 study_obj_dict[study_obj_id][field]=val
+#             else:
+#                 study_obj_dict[study_obj_id]={field:val}
+#             for id,data in study_obj_dict.items():
+#                 models.StudentStudyRecord.objects.filter(pk=study_obj_id).update(**data)
+#
+#         return self.get(request,ClassStudyRecord_id)
+#     '''
+#     requset.POST接收到的数据
+#     < QueryDict: {
+# 	'record_choices_9': ['late'],
+# 	'score_9': ['-1'],
+# 	'homework_note_9': ['暂无'],
+# 	'record_choices_10': ['leave_early'],
+# 	'score_10': ['70'],
+# 	'homework_note_10': ['暂无'],
+# 	'record_choices_11': ['checked'],
+# 	'score_11': ['-1'],
+# 	'homework_note_11': ['暂无'],
+# 	'csrfmiddlewaretoken': ['etdn9wjMtmAmM7szNTbtHd41Gcv3wZL2gCMPh1IS0z1WKXWyqGLCHYyY2JJ2dAOo']
+# } >
+#     '''
+
+
+#学习情况详情（formset版）
+from django.forms.models import modelformset_factory
+from django import forms
+from app01 import models
+
+class StudyDetailsModelForm(forms.ModelForm):
+    class Meta:
+        model=models.StudentStudyRecord
+        # fields='__all__'
+        fields=['student','record','score','homework_note']
+
+class Studydetail(View):
+
+
+    def get(self,request,ClassStudyRecord_id):
+        formset_obj=modelformset_factory(model=models.StudentStudyRecord,form=StudyDetailsModelForm,extra=0)
+        class_obj=models.ClassStudyRecord.objects.filter(pk=ClassStudyRecord_id).first()
+        title = f'{class_obj.date}{class_obj.class_obj}第{class_obj.day_num}节次'
+        study_objs=models.StudentStudyRecord.objects.filter(classstudyrecord=class_obj)
+        formset_objs=formset_obj(queryset=study_objs)
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), len(formset_objs) , request,
+                                   per_page_counts, page_number)
+        formset_objs = formset_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+        if formset_objs:
+            return render(request, 'studydeatil.html', { 'formset_objs':formset_objs, 'page': page_,'title':title})
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'studydeatil.html', {'formset_objs': formset_objs, 'page': page, 'title':title})
+
+        # return render(request,'studydeatil.html',{'formset_objs':formset_objs})#不分页直接返回
+
+
+    def post(self,request,ClassStudyRecord_id):
+        print(request.POST)
+        formset_obj=modelformset_factory(model=models.StudentStudyRecord,form=StudyDetailsModelForm,extra=0)
+        formset_objs=formset_obj(request.POST)
+        if formset_objs.is_valid():
+            formset_objs.save()
+        else:
+            print(formset_objs.errors)
+
+        # return self.get(request,ClassStudyRecord_id)#避免一次重定向
+        return redirect(reverse('studydetail',args=(ClassStudyRecord_id,)))#reverse反向解析传参数
+
+
+
+
+
+
+# 学习信息
+class Study(View):
+    def get(self, request,id=None):
+        if id:
+            study_objs=models.StudentStudyRecord.objects.filter(classstudyrecord_id=id)
+        else:
+            study_objs = models.StudentStudyRecord.objects.all()
+
+        # 查询
+        field = request.GET.get('field')
+        val = request.GET.get(field)
+        # if field and val:
+        #     if field in ['customer', ]:
+        #
+        #         study_objs = models.Student.objects.filter(**{field: val})
+        #
+        #     else:
+        #
+        #         study_objs = models.Student.objects.filter(**{field + '__contains': val})
+        #
+        searchfields = ['customer', 'company', 'position', 'date']
+        batch_update_fields_list = ['date','position']
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), study_objs.count(), request,
+                                   per_page_counts, page_number)
+        study_objs = study_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if  study_objs:
+
+            return render(request, 'study.html',
+                          {"study_objs": study_objs, 'page': page_, 'allfields': StudyModelForm(),
+                           'search_fields_list': searchfields, 'batch_update_fields_list': batch_update_fields_list})
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'study.html', {'study_objs': study_objs, 'page': page, })
+
+    def post(self, request):
+        operation = request.POST.get('operation', '')
+        id_list = request.POST.get('id_list', '')
+
+        status = False
+        if operation and id_list:
+            if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
+                status = getattr(sys.modules[__name__], operation)(request, models.StudentStudyRecord)
+        return JsonResponse({'status': status, 'operaiton': operation})
+class Add_Edit_Study(View):
+    def get(self, request, id=None):
+        obj = models.StudentStudyRecord.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+            print(obj)
+        study_obj =StudyModelForm(instance=obj)
+        return render(request, 'add_edit_study.html', {"study_obj": study_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.StudentStudyRecord.objects.filter(pk=id).first()
+        # print('>>>>>>', obj)
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        study_obj = StudyModelForm(request.POST, instance=obj)
+        if study_obj.is_valid():
+            # print(student_obj.cleaned_data)
+            study_obj.save()
+            return redirect('study')
+        else:
+            return render(request, 'add_edit_study.html', {"study_obj": study_obj, 'flag': flag})
+class DeleteStudy(View):
+    def get(self, request, id):
+        models.StudentStudyRecord.objects.filter(pk=id).delete()
+        return redirect('study')
+

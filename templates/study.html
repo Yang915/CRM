@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+<!--右边内容标题-->
+{% block title %}
+    <h1>
+        学习记录表
+        <small>Student infomation</small>
+
+    </h1>
+
+
+    <div class="row" style="margin-top: 15px;">
+        {% load permission %}
+        {% if 'study'|permission_noarg:request %}
+            <!--添加学生-->
+            <a href="{% url 'addstudy' %}" class="btn btn-primary btn-sm  col-xs-1 "
+               style="margin-left: 30px;width: 90px;height:28px">添加学习记录</a>
+        {% endif %}
+
+
+        <!--批量操作:post请求当前路径-->
+        {% if 'editstudy'|permission_arg:request %}<!--判断当前用户是否有权限，自定义过滤器-->
+            <div class="col-xs-6">
+                <!--批量操作选项-->
+                <select name="batch_operation" id="operation" style="height: 26px;">
+                    <option value="">--操作--</option>
+                    <option value="batch_delete">批量删除</option>
+                    <option value="batch_update">批量修改</option>
+                </select>
+                <!--批量更新字段选择-->
+                <select name="" id="fields" style="height: 26px;" hidden="hidden">
+                    <option value="">--操作--</option>
+                    {% for field in allfields %}
+                        {% if field.name in batch_update_fields_list %}
+                            <option value="{{ field.name }}">{{ field.label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <!--更新值选择-->
+
+                {% for field in allfields %}
+                    {% if field.name in batch_update_fields_list %}
+                        <div id="{{ field.name }}" hidden class="c1 "
+                             style="width:165px;height: 26px;margin-bottom: 10px">{{ field }}</div>
+                    {% endif %}
+                {% endfor %}
+
+
+                {% csrf_token %}
+                <button class="btn btn-danger" style="height: 26px;line-height: 12px;vertical-align: 0.5px"
+                        id="batch_operation">Go
+                </button>
+
+            </div>
+        {% endif %}
+
+
+        <!--查询字段-->
+        <form action="" class=" col-xs-2 pull-right " method="get" style="padding-right: 0">
+            <select name="field" id="search" style="height: 25px;">
+                <option value="">--字段--</option>
+                {% for field in allfields %}
+                    {% if field.name in search_fields_list %}
+                        <option value="{{ field.name }}">{{ field.label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <input type="submit" value="查询">
+
+
+            {% for field in allfields %}
+                {% if field.name in search_fields_list %}
+                    <div class="c2 {{ field.name }}" id="{{ field.name }}" hidden
+                         style="width: 126px;">{{ field }}</div>
+                {% endif %}
+            {% endfor %}
+
+
+        </form>
+
+
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+
+
+
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>
+                <button class="btn btn-xs btn-primary" id="all" title="全选"><i class="fa fa-check-square-o"></i></button>
+                <button class="btn btn-xs btn-success" id="opp" title="反选"><i class="fa fa-check-square"></i></button>
+
+
+            <th>序号</th>
+            <th>学生姓名</th>
+            <th>课程信息</th>
+            <th>上课记录</th>
+            <th>本节成绩</th>
+            <th>作业评语</th>
+            <th>作业提交日期</th>
+
+
+
+            {% if 'editstudy'|permission_arg:request  or 'deletestudy'|permission_arg:request %}
+                <th>操作</th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for study_obj in study_objs %}
+            <tr>
+                <td><input type="checkbox" name="select" value="{{ study_obj.pk }}"></td>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ study_obj.student }}</td>
+                <td style="width:280px">{{ study_obj.classstudyrecord }}</td>
+                <td>{{ study_obj.get_record_display }}</td>
+                <td>{{ study_obj.get_score_display }}</td>
+                <td>{{ study_obj.homework_note|default:'暂无' }}</td>
+                <td>{{ study_obj.date|date:'Y-m-d'|default:'--' }}</td>
+
+                {% if 'editstudy'|permission_arg:request  or 'deletestudy'|permission_arg:request %}
+                    <td>
+                        {% if 'editstudy'|permission_arg:request %}
+                            <a href="{% url 'editstudy' study_obj.pk %}" class="btn btn-warning btn-xs"
+                               title="编辑"><i
+                                    class="fa fa-edit "></i></a>
+                        {% endif %}
+                        {% if 'deletestudy'|permission_arg:request %}
+                            <a href="{% url 'deletestudy' study_obj.pk %}" class="btn btn-danger btn-xs"
+                               title="删除"><i
+                                    class="fa fa-trash-o fa-lg "></i></a>
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+    <script src="{% static 'jquery-cookie-1.4.1.js' %}"></script>
+    <!--全选/反选-->
+    <script>
+        //全选操作
+        $('#all').click(function () {
+            $('input[name=select]').not('[disabled=disabled]').prop('checked', true);
+        });
+        //反选操作
+        $('#opp').click(function () {
+            var unchecked = $('input[name=select]:not(:checked)').not('[disabled=disabled]');
+            $('input[name=select]:checked').not('[disabled=disabled]').prop('checked', false);
+            unchecked.prop('checked', true)
+        });
+    </script>
+    <!--批量操作-->
+    <script>
+
+        //选择批量操作的条件
+        $('#operation').change(function () {
+            {#alert($('#operation').val());#}
+
+            if ($('#operation').val() === 'batch_update') {
+                $("#fields").attr('hidden', false);
+            } else {
+                $("#fields").attr('hidden', 'hidden');
+                $('.c1').attr('hidden', 'hidden');
+            }
+        });
+
+        $('#fields').change(function () {
+            var id = "#" + $('#fields').val();
+            $('.c1').attr('hidden', 'hidden');
+            $(id).attr('hidden', false);
+        });
+
+
+        //批量处理提交
+        $("#batch_operation").click(function () {
+            var operation = $("#operation").val();//获取批量操作类型
+            //alert(operation);
+            var selecteds = $('input[name=select]:checked');//获取已选中的数据
+            //console.log(selecteds);
+            //循环获取选中数据的value值添加到数组
+            var checked_id_list = [];
+            selecteds.each(function (index, obj) {//注意值和索引的顺序
+                //console.log(obj);
+                //console.log(val);
+                {#checked_id_list.push(obj.value);#}
+                checked_id_list.push($(obj).val());//注意each循环出来都是dom对象
+            });
+            console.log(checked_id_list);
+
+
+            //  批量操作提交确认
+            if (operation && checked_id_list.length) {
+
+                if (confirm('确定执行吗？')) {
+                    $.ajax({
+                        url: '{% url "study" %}',
+                        type: 'post',
+                        headers: {'X-CSRFToken': $.cookie('csrftoken')},
+                        data: {
+                            operation: operation,
+                            id_list: JSON.stringify(checked_id_list),
+
+                            //id_list:checked_id_list,
+                        },
+                        success: function (response) {
+                            var op = response.operaiton;
+                            var status = response.status;
+                            console.log(op);
+                            console.log(status);
+                            if (status === 1) {
+                                if (op === 'batch_delete') {
+                                    alert('批量删除成功！');
+                                }
+                                else if (op === 'batch_update') {
+                                    alert('批量更新成功！');
+                                }
+                                else if (op === 'batch_public_private') {
+                                    alert('公户转私户成功！');
+                                }
+                                else if (op === 'batch_private_public') {
+                                    alert('私户转公户成功！');
+                                }
+                                ;
+
+                                location.reload();
+                            } else {
+                                if (op !== '') {
+                                    alert('批量操作失败！')
+                                }
+                            }
+
+
+                        },
+                    });
+                }
+                ;
+            }
+
+        });
+
+    </script>
+    <!--搜索条件-->
+    <script>
+        //搜索框选择条件值
+        $('.c2').children().prop('disabled', 'disabled');
+        $("#search").change(function () {
+            var clas = "." + $("#search").val();
+            $('.c2').prop('hidden', 'hidden');
+            $('.c2').children().prop('disabled', 'disabled');
+            $(clas).prop('hidden', false);
+            $(clas).children().prop('disabled', false);
+        });
+    </script>
+
+{% endblock %}
+
+

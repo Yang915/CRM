@@ -226,13 +226,39 @@
             <!-- /.search form -->
 
             <!-- Sidebar Menu -->
+            <!-- 左边动态菜单栏 -->
             <ul class="sidebar-menu" data-widget="tree">
                 <li class="header">欢迎使用！</li>
 
                 <!-- Optionally, you can add icons to the links -->
-
+                <!-- 自定义标签组件进行渲染 -->
                 {% load menu %}
                 {% menu_tag request %}
+
+                <li>
+                    <a href="#1">
+                        <i class="fa fa-link"></i>
+                        <span>报名信息</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'student' %}">
+                        <i class="fa fa-link"></i>
+                        <span>学生信息</span>
+                    </a>
+                </li>
+                <li>
+                    <a href='{% url "teach" %}'>
+                        <i class="fa fa-link"></i>
+                        <span>教学记录</span>
+                    </a>
+                </li>
+                <li >
+                    <a href="{% url 'study' %}">
+                        <i class="fa fa-link"></i>
+                        <span>学习记录</span>
+                    </a>
+                </li>
 
 
                 <li class="treeview">
@@ -261,6 +287,9 @@
         {#    <div class="row">#}
         {#        <div class="col-xs-10 col-xs-"></div>#}
         {#    </div>#}
+
+
+        <!--右边标题信息-->
         <section class="content-header">
             {% block title %}
                 <h1>
@@ -268,9 +297,23 @@
                     <small>Customer relationship management</small>
                 </h1>
             {% endblock %}
+            <!--首页不需要显示面包屑导航-->
             <ol class="breadcrumb">
-                <li><a href="#"><i class="fa fa-dashboard"></i> Level</a></li>
-                <li class="active">Here</li>
+                {% if request.path == '/base/' %}
+                {% else %}
+                    <i class="fa fa-window-restore"></i>
+
+                    {% for bread in request.breadcrunmb %}
+                        {% if forloop.first %}
+                            <li><a href="{{ bread.url }}" style="color: blue">{{ bread.title }}</a></li>
+                        {% elif forloop.last %}
+                            <li class="active"><a href="javascript:void(0)">{{ bread.title }}</a></li>
+                        {% else %}
+                            <li><a href="{{ bread.url }}" style="color: blue">{{ bread.title }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                {% endif %}
             </ol>
         </section>
 

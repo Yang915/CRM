@@ -54,5 +54,5 @@ def menu_tag(request):
                 menu_level2['class']='active'
                 break
 
-    print('>>>>>>>>>', request.session['menu_level1_dict'])
+    # print('>>>>>>>>>', request.session['menu_level1_dict'])
     return {'menu_list': request.session['menu_level1_dict']}

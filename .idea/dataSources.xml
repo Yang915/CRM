@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="db" uuid="12d29bb2-c40c-412a-8aaf-030249b34b17">
+    <data-source source="LOCAL" name="db" uuid="6207e1cb-0765-42c4-bbc5-c4869e4bf46a">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <imported>true</imported>
       <remarks>SQLite</remarks>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:E:\Python项目\django\day07420190617(crm权限分配和菜单显示)\crm01\db.sqlite3</jdbc-url>
+      <jdbc-url>jdbc:sqlite:E:\Python项目\django\day07620190619(权限二级菜单及权限操作面包屑)\crm01\db.sqlite3</jdbc-url>
       <driver-properties>
         <property name="enable_load_extension" value="true" />
       </driver-properties>

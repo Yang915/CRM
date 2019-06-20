@@ -95,7 +95,7 @@ class RegisterForm(forms.Form):
             return self.cleaned_data
 
 
-#客户数据显示
+#客户信息
 class CustomerModelForm(forms.ModelForm):
     class Meta:
         model=models.Customer
@@ -129,3 +129,49 @@ class FollowrecordModelForm(forms.ModelForm):
             self.fields[field].error_messages = {'required': '该字段不能为空！'}
             # print(field)
             self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+#学生信息
+class StudentModelForm(forms.ModelForm):
+    class Meta:
+        model=models.Student
+        fields='__all__'
+        widgets={
+            'date':forms.DateInput(attrs={'type':'date'}),
+        }
+
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class':'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}
+
+#教学信息
+class TeachModelForm(forms.ModelForm):
+    class Meta:
+        model=models.ClassStudyRecord
+        fields='__all__'
+        widgets={
+            'has_homework':forms.CheckboxInput(attrs={'type':'radio'})
+        }
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        for field in self.fields:
+            if field=='has_homework':
+                continue
+            self.fields[field].widget.attrs.update({'class':'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}
+
+#学习信息
+class StudyModelForm(forms.ModelForm):
+    class Meta:
+        model=models.StudentStudyRecord
+        fields='__all__'
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            for field in self.fields:
+                if field == 'has_homework':
+                    continue
+                self.fields[field].widget.attrs.update({'class': 'form-control'})
+                self.fields[field].error_messages = {'required': '该字段不能为空！'}
+
