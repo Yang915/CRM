@@ -67,8 +67,7 @@ urlpatterns = [
     url(r'^teach/edit/(\d+)/', views.Add_Edit_Teach.as_view(), name='editteach'),
     url(r'^teach/delete/(\d+)/', views.DeleteTeach.as_view(), name='deleteteach'),
 
-
-    #学习情况详情(批量操作：原生版和formset版)
+    # 学习情况详情(批量操作：原生版和formset版)
     url(r'^studydetail/(\d+)', views.Studydetail.as_view(), name='studydetail'),
 
     # 学习信息
@@ -77,5 +76,36 @@ urlpatterns = [
     url(r'^study/edit/(\d+)/', views.Add_Edit_Study.as_view(), name='editstudy'),
     url(r'^study/delete/(\d+)/', views.DeleteStudy.as_view(), name='deletestudy'),
     url(r'^study/more/(\d+)/', views.Study.as_view(), name='morestudy'),
+
+    # 用户信息管理
+    url(r'^user/list/$', views.UserList.as_view(), name='user_list'),
+    url(r'^user/add/', views.Add_Edit_User.as_view(), name='user_add'),
+    url(r'^user/edit/(\d+)/', views.Add_Edit_User.as_view(), name='user_edit'),
+    url(r'^user/delete/(\d+)/', views.DeleteUser.as_view(), name='user_delete'),
+    url(r'^userpwd_ret/(\d+)/', views.userpwd_ret, name='userpwd_ret'),
+
+    # 角色信息管理
+    url(r'^role/list/$', views.RoleList.as_view(), name='role_list'),
+    url(r'^role/add/', views.Add_Edit_Role.as_view(), name='role_add'),
+    url(r'^role/edit/(\d+)/', views.Add_Edit_Role.as_view(), name='role_edit'),
+    url(r'^role/delete/(\d+)/', views.DeleteRole.as_view(), name='role_delete'),
+    url(r'^user/list/role/$', views.UserList.as_view(), name='user_list_role'),
+
+    # 权限信息管理
+    url(r'^permission/list/$', views.PermissionList.as_view(), name='permission_list'),
+    url(r'^permission/add/', views.Add_Edit_Permission.as_view(), name='permission_add'),
+    url(r'^permission/edit/(\d+)/', views.Add_Edit_Permission.as_view(), name='permission_edit'),
+    url(r'^permission/delete/(\d+)/', views.DeletePermission.as_view(), name='permission_delete'),
+
+    # 菜单信息管理
+    url(r'^menu/list/$', views.MenuList.as_view(), name='menu_list'),
+    url(r'^menu/add/', views.Add_Edit_Menu.as_view(), name='menu_add'),
+    url(r'^menu/edit/(\d+)/', views.Add_Edit_Menu.as_view(), name='menu_edit'),
+    url(r'^menu/delete/(\d+)/', views.DeleteMenu.as_view(), name='menu_delete'),
+    url(r'^permission/list/menu/$', views.PermissionList.as_view(), name='permission_list_menu'),
+
+    # 权限分配
+    url(r'^permission/distribute/$', views.PermissionDistribute.as_view(), name='permission_distribute'),
+
 
 ]

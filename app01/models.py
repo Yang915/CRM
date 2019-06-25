@@ -73,14 +73,14 @@ score_choices = ((100, 'A+'),
 # 用户表（自定义使用auth认证）
 class UserInfo(AbstractUser):
     # 销售,班主任,讲师,三哥
-    telephone = models.CharField(max_length=32, null=True)
+    telephone = models.CharField(max_length=32, null=True, blank=True, verbose_name='联系电话')
     role = models.ManyToManyField(to='Role', verbose_name='角色', default=None, null=True, blank=True)
     dep = models.ForeignKey(to='Department', null=True, blank=True)
 
 
 # 角色表
 class Role(models.Model):
-    name = models.CharField(max_length=32, verbose_name='角色')
+    name = models.CharField(max_length=32, verbose_name='角色', unique=True)
     permission = models.ManyToManyField(to='Permission', verbose_name='权限', null=True, blank=True)
 
     def __str__(self):
@@ -101,6 +101,14 @@ class Permission(models.Model):
 
 
 # 一级菜单表
+ico_list = ['fa fa-mortar-board', 'fa fa-link', 'fa fa-map-o', 'fa fa-reorder', 'fa fa-sliders', 'fa fa-bandcamp',
+            'fa fa-ravelry', 'fa fa-user-circle', 'fa fa-window-restore', 'fa fa-window-maximize',
+            'fa fa-window-restore',
+            'fa fa-book', 'fa fa-bookmark-o', 'fa fa-cubes', 'fa fa-folder-open-o', 'fa fa-laptop', 'fa fa-server',
+            'fa fa fa-address-card','fa fa-sitemap','fa fa-sticky-note-o','fa fa-tasks','fa fa-bar-chart-o','fa fa-columns',
+            'fa fa-list-ul','fa fa-indent']
+
+
 class Menu(models.Model):
     name = models.CharField(max_length=12, verbose_name='一级菜单')
     ico = models.CharField(max_length=32, verbose_name='一级菜单图标', default='fa fa-link')
@@ -230,8 +238,7 @@ class ConsultRecord(models.Model):
     delete_status = models.BooleanField(verbose_name='删除状态', default=False)
 
 
-
-#报名表
+# 报名表
 class Enrollment(models.Model):
     """
     报名表
@@ -249,20 +256,21 @@ class Enrollment(models.Model):
 
     delete_status = models.BooleanField(verbose_name='删除状态', default=False)
 
-    school = models.ForeignKey('Campuses')  #校区表
+    school = models.ForeignKey('Campuses')  # 校区表
 
     enrolment_class = models.ForeignKey("ClassList", verbose_name="所报班级")
 
     class Meta:
         unique_together = ('enrolment_class', 'customer')
 
-#学生表
+
+# 学生表
 class Student(models.Model):
     """
     学生表（已报名）
     """
-    customer = models.OneToOneField(verbose_name='客户信息', to='Customer',on_delete=models.CASCADE,null=True,blank=True)
-    class_list = models.ManyToManyField(verbose_name="已报班级", to='ClassList', blank=True,related_name="students")
+    customer = models.OneToOneField(verbose_name='客户信息', to='Customer', on_delete=models.CASCADE, null=True, blank=True)
+    class_list = models.ManyToManyField(verbose_name="已报班级", to='ClassList', blank=True, related_name="students")
 
     emergency_contract = models.CharField(max_length=32, blank=True, null=True, verbose_name='紧急联系人')
     company = models.CharField(verbose_name='公司', max_length=128, blank=True, null=True)
@@ -277,37 +285,40 @@ class Student(models.Model):
         return self.customer.name
 
     def class_dispaly(self):
-        l=[]
+        l = []
         for i in self.class_list.all():
-
             l.append(str(i))
         return '.'.join(l)
-#班级教学记录表
+
+
+# 班级教学记录表
 class ClassStudyRecord(models.Model):
     """
     上课记录表 （班级记录）
     """
-    class_obj = models.ForeignKey(verbose_name="班级", to="ClassList",on_delete=models.CASCADE)
+    class_obj = models.ForeignKey(verbose_name="班级", to="ClassList", on_delete=models.CASCADE)
     day_num = models.IntegerField(verbose_name="节次", help_text=u"此处填写第几节课或第几天课程...,必须为数字")
 
-    teacher = models.ForeignKey(verbose_name="讲师", to='UserInfo',on_delete=models.CASCADE)
+    teacher = models.ForeignKey(verbose_name="讲师", to='UserInfo', on_delete=models.CASCADE)
     date = models.DateField(verbose_name="上课日期", auto_now_add=True)
     course_title = models.CharField(verbose_name='本节课程标题', max_length=64, blank=True, null=True)
     course_memo = models.TextField(verbose_name='本节课程内容概要', blank=True, null=True)
-    has_homework = models.BooleanField(default=True, verbose_name="本节有作业",)
+    has_homework = models.BooleanField(default=True, verbose_name="本节有作业", )
     homework_title = models.CharField(verbose_name='本节作业标题', max_length=64, blank=True, null=True)
     homework_memo = models.TextField(verbose_name='作业描述', max_length=500, blank=True, null=True)
     exam = models.TextField(verbose_name='踩分点', max_length=300, blank=True, null=True)
 
     def __str__(self):
         return "{0} day{1}".format(self.class_obj, self.day_num)
-#学生学习记录表
+
+
+# 学生学习记录表
 class StudentStudyRecord(models.Model):
     '''
     学生学习记录
     '''
-    student = models.ForeignKey(verbose_name="学员", to='Student',on_delete=models.CASCADE)
-    classstudyrecord = models.ForeignKey(verbose_name="第几天课程", to="ClassStudyRecord",on_delete=models.CASCADE)
+    student = models.ForeignKey(verbose_name="学员", to='Student', on_delete=models.CASCADE)
+    classstudyrecord = models.ForeignKey(verbose_name="第几天课程", to="ClassStudyRecord", on_delete=models.CASCADE)
     record_choices = (('checked', "已签到"),
                       ('vacate', "请假"),
                       ('late', "迟到"),
@@ -340,4 +351,4 @@ class StudentStudyRecord(models.Model):
         return "{0}-{1}".format(self.classstudyrecord, self.student)
 
     class Meta:
-        unique_together=["student","classstudyrecord"]
+        unique_together = ["student", "classstudyrecord"]

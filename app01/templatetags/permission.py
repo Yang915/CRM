@@ -24,3 +24,14 @@ def permission_arg(url,request):
 
             return True
     return False
+
+@register.filter
+def tr(i,n):
+    print(i,n,type(i),type(n))
+
+
+    if t==0:
+
+        return True
+    else:
+        return False

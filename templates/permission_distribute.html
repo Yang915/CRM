@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+<!--右边内容标题-->
+{% block title %}
+    <h1>后台管理：权限分配
+        <small>Permission Distribute</small>
+    </h1>
+
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+    <div class="row">
+      <!--用户信息-->
+        <div class="col-xs-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading"><i class="fa fa-address-book-o"></i>用户信息：
+
+                </div>
+                <div class="panel-body">
+                <!--循环生成用户-->
+                    {% for user_obj in user_objs %}
+                          <!--选中样式-->
+                        {% if uid == user_obj.pk %}
+                            <li>
+                                <a href="?uid={{ user_obj.pk }}" style="color: red">{{ user_obj.username }}</a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <a href="?uid={{ user_obj.pk }}" style="color: black">{{ user_obj.username }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+  <!--角色信息-->
+        <div class="col-xs-3">
+
+            <form method="post">
+                <input type="text" hidden="hidden" name="flag" value="role">
+                {% csrf_token %}
+                <div class="panel panel-danger">
+
+                    <div class="panel-heading"><i class="fa fa-drivers-license-o"></i>角色信息：
+                        <!--点击用户就会有uid,控制按钮的显示和隐藏-->
+                        {% if uid %}
+                            <button type="submit" class="pull-right btn btn-success btn-sm"
+                                    style="margin-top: -5px"><i class="fa fa-save">保存</i></button>
+                        {% endif %}
+                    </div>
+                    <span style="color: #d4d4d4;">
+                        提示：点击用户后才能为其分配角色
+                    </span>
+                    <div class="panel-body" style="padding-top: -20px">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>角色</th>
+                                <th class="text-center">选择</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!--点击角色显示样式-->
+                            {% for role_obj in role_objs %}
+                                {% if rid == role_obj.pk %}
+                                    <tr style="background-color: rgba(47,252,44,0.75)">
+                                        {% else %}
+                                    <tr>
+                                {% endif %}
+                            <!--点击用户默认选中样式-->
+                            {% if  role_obj.pk in user_role_idlist %}
+
+                                <td><a href="?uid={{ uid }}&rid={{ role_obj.pk }}" style="color: red"
+                                       class="role">{{ role_obj.name }}</a>
+                                </td>
+                                <td><input type="checkbox" name="role"
+                                           value="{{ role_obj.pk }}" class="pull-right" checked></td>
+
+                            {% else %}
+
+                                <td><a href="?uid={{ uid }}&rid={{ role_obj.pk }}" style="color: #0a0a0a"
+                                       class="role">{{ role_obj.name }}</a></td>
+                                <td><input type="checkbox" name="role"
+                                           value="{{ role_obj.pk }}" class="pull-right"></td>
+
+                            {% endif %}
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!--菜单权限信息-->
+        <div class="col-xs-6">
+            <form method="post">
+                <input type="text" hidden="hidden" name="flag" value="permission">
+                {% csrf_token %}
+                <div class="panel panel-success">
+                    <div class="panel-heading"><i class="fa fa-sitemap"></i>菜单权限信息：
+                    <!--点击角色才会有rid,判断按钮的显示和隐藏-->
+                        {% if rid %}
+                            <button type="submit" class="pull-right btn btn-success btn-sm"
+                                    style="margin-top: -5px"><i class="fa fa-save">保存</i></button>
+                        {% endif %}
+                    </div>
+                    <span style="color: #d4d4d4;">
+                        提示：点击角色后，才能为其分配权限
+                    </span>
+                    <div class="panel-body" id="menu_permission">
+
+                        <table class="table">
+                            <tbody id="permission">
+                            <!--一级菜单-->
+                            {% for id1,menu in permission_dic.items %}
+                                <tr class="success">
+                                    <td colspan="4"><b>{{ menu.menu_name }}</b></td>
+                                </tr>
+
+                                <!--二级菜单-->
+                                {% for id2,permission1 in menu.items %}
+                                    {% if forloop.last %}
+                                        {% for permission2_dict in permission1 %}
+                                            <tr>
+                                                {% if permission2_dict.id in permission_idlist %}
+                                                    <td style="padding-left: 10px;color: red" class="text-primary">
+                                                        <input type="checkbox" name="permission"
+                                                               value="{{ permission2_dict.id }}" checked>
+                                                        {{ permission2_dict.name }}
+                                                    </td>
+                                                {% else %}
+                                                    <td style="padding-left: 10px" class="text-primary">
+                                                        <input type="checkbox" name="permission"
+                                                               value="{{ permission2_dict.id }}">
+                                                        {{ permission2_dict.name }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+
+                                            <!--权限归属菜单-->
+                                            {% for id3,p3 in permission2_dict.items %}
+                                                {% if forloop.last %}
+                                                    <tr>
+                                                        {% for p4 in p3 %}
+                                                            <!--通过uid查出的permission_idlist权限列表判断当前是否选中-->
+                                                            {% if p4.id in permission_idlist %}
+                                                                <td style="padding-left: 25px;color: red">
+                                                                    <input type="checkbox" name="permission"
+                                                                           value="{{ p4.id }}" checked>
+                                                                    {{ p4.name }}
+                                                                </td>
+                                                            {% else %}
+                                                                <td style="padding-left: 25px">
+                                                                    <input type="checkbox" name="permission"
+                                                                           value="{{ p4.id }}">
+                                                                    {{ p4.name }}
+                                                                </td>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    <!--权限中没有指定归属分配的权限展示-->
+                        {% load tr %}
+                        {% for permission in permission_others %}
+
+                            {% if forloop.first %}
+                                <table class="table">
+                                    <tr class="success">
+                                        <td colspan="4"><b>其它未分类</b></td>
+                                    </tr>
+                                </table>
+
+                            {% else %}
+
+
+                                {% if permission.id in permission_idlist %}
+                                    <!--自定义过滤器循环固定个数进行换行-->
+                                    {% if forloop.counter0|tr:3 %}
+                                        <br>
+                                    {% endif %}
+
+                                    <div style="display: inline-block;width: 130px;"><span
+                                            style="padding-left: 25px;color: red;width: 125px">
+                                            <input type="checkbox" name="permission"
+                                                   value="{{ permission.id }}" checked>
+                                            {{ permission.name }}
+                                        </span></div>
+                                {% else %}
+                                    {% if forloop.counter0|tr:3 %}
+                                        <br>
+                                    {% endif %}
+                                    <div style="display: inline-block;width: 130px;"><span style="padding-left: 25px;">
+                                            <input type="checkbox" name="permission"
+                                                   value="{{ permission.id }}">
+                                            {{ permission.name }}
+                                        </span></div>
+                                {% endif %}
+
+                            {% endif %}
+
+                        {% endfor %}
+
+
+                        {#                                        {% for permission_obj in permission_objs %}#}
+                        {##}
+                        {#                                            <li><a href="">{{ permission_obj.name }}</a></li>#}
+                        {#                                        {% endfor %}#}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+    </div>
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+
+
+
+
+
+
+{% endblock %}
+
+

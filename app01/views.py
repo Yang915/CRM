@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
-from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm, StudentModelForm ,TeachModelForm,StudyModelForm # 自定义的form组件
+from app01.form import RegisterForm, CustomerModelForm, FollowrecordModelForm, StudentModelForm, TeachModelForm, \
+    StudyModelForm, UserModelForm, RoleModelForm, PermissionModelForm, MenuModelForm  # 自定义的form组件
 from app01 import models  # 自定义的models模块
 from django.http import JsonResponse  # Json响应数据类型
 from django.urls import reverse  # url反向解析
@@ -486,6 +487,8 @@ class Followrecord(View):
             if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
                 status = getattr(sys.modules[__name__], operation)(request, models.ConsultRecord)
         return JsonResponse({'status': status, 'operaiton': operation})
+
+
 # 添加/编辑跟进记录(一个页面add_edit_followrecord.html)
 class Add_Edit_Followrecord(View):
 
@@ -513,6 +516,8 @@ class Add_Edit_Followrecord(View):
             return redirect('followrecord')
         else:
             return render(request, 'add_edit_followrecord.html', {'followrecord_obj': followrecord_obj, 'flag': flag})
+
+
 # 单个删除跟进记录
 class DeleteFollowrecord(View):
 
@@ -527,7 +532,7 @@ class Student(View):
     def get(self, request):
         student_objs = models.Student.objects.all()
 
-        print('fydgusopdghdpfs[gopsaoospjak[jofghps')
+
 
         # 查询
         field = request.GET.get('field')
@@ -542,7 +547,7 @@ class Student(View):
                 student_objs = models.Student.objects.filter(**{field + '__contains': val})
 
         searchfields = ['customer', 'company', 'position', 'date']
-        batch_update_fields_list = ['date','position']
+        batch_update_fields_list = ['date', 'position']
 
         per_page_counts = 8
         page_number = 5
@@ -552,7 +557,7 @@ class Student(View):
         student_objs = student_objs[page_obj.start_num:page_obj.end_num]
         page_ = page_obj.page_html()
 
-        if  student_objs:
+        if student_objs:
 
             return render(request, 'student.html',
                           {"student_objs": student_objs, 'page': page_, 'allfields': StudentModelForm(),
@@ -570,6 +575,8 @@ class Student(View):
             if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
                 status = getattr(sys.modules[__name__], operation)(request, models.Student)
         return JsonResponse({'status': status, 'operaiton': operation})
+
+
 class Add_Edit_Student(View):
     def get(self, request, id=None):
         obj = models.Student.objects.filter(pk=id).first()
@@ -577,7 +584,7 @@ class Add_Edit_Student(View):
             flag = 0
         else:
             flag = 1
-            print(obj)
+
         student_obj = StudentModelForm(instance=obj)
         return render(request, 'add_edit_student.html', {"student_obj": student_obj, 'flag': flag})
 
@@ -595,6 +602,8 @@ class Add_Edit_Student(View):
             return redirect('student')
         else:
             return render(request, 'add_edit_student.html', {"student_obj": student_obj, 'flag': flag})
+
+
 class DeleteStudent(View):
     def get(self, request, id):
         models.Student.objects.filter(pk=id).delete()
@@ -618,9 +627,8 @@ class Teach(View):
         #
         #         teach_objs = models.ClassStudyRecord.objects.filter(**{field + '__contains': val})
 
-        #查询字段
+        # 查询字段
         searchfields = ['customer', 'company', 'position', 'date']
-
 
         per_page_counts = 8
         page_number = 5
@@ -630,7 +638,7 @@ class Teach(View):
         teach_objs = teach_objs[page_obj.start_num:page_obj.end_num]
         page_ = page_obj.page_html()
 
-        if  teach_objs:
+        if teach_objs:
 
             return render(request, 'teach.html',
                           {"teach_objs": teach_objs, 'page': page_, 'allfields': TeachModelForm(),
@@ -647,20 +655,20 @@ class Teach(View):
         if operation and id_list:
             if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
                 status = getattr(sys.modules[__name__], operation)(request, models.ClassStudyRecord)
-            elif hasattr(self,operation) and callable(getattr(self,operation)):
-                status=getattr(self,operation)(request)
+            elif hasattr(self, operation) and callable(getattr(self, operation)):
+                status = getattr(self, operation)(request)
         return JsonResponse({'status': status, 'operaiton': operation})
 
-    def batch_create_studentstudyrecord(self,request):
-        id_list=json.loads(request.POST.get('id_list', ''))
-        id_list =[int(i) for i in id_list]
-        teach_objs=models.ClassStudyRecord.objects.filter(pk__in=id_list)
+    def batch_create_studentstudyrecord(self, request):
+        id_list = json.loads(request.POST.get('id_list', ''))
+        id_list = [int(i) for i in id_list]
+        teach_objs = models.ClassStudyRecord.objects.filter(pk__in=id_list)
         try:
-            study_obj_list=[]
+            study_obj_list = []
             for teach_obj in teach_objs:
-                students_objs=models.Student.objects.filter(class_list=teach_obj.class_obj)
+                students_objs = models.Student.objects.filter(class_list=teach_obj.class_obj)
                 for students_obj in students_objs:
-                    study_obj=models.StudentStudyRecord(student=students_obj,classstudyrecord=teach_obj)
+                    study_obj = models.StudentStudyRecord(student=students_obj, classstudyrecord=teach_obj)
                     study_obj_list.append(study_obj)
                 models.StudentStudyRecord.objects.bulk_create(study_obj_list)
         except Exception as e:
@@ -669,6 +677,7 @@ class Teach(View):
         else:
             return 1
 
+
 class Add_Edit_Teach(View):
     def get(self, request, id=None):
         obj = models.ClassStudyRecord.objects.filter(pk=id).first()
@@ -676,7 +685,7 @@ class Add_Edit_Teach(View):
             flag = 0
         else:
             flag = 1
-            print(obj)
+
         teach_obj = TeachModelForm(instance=obj)
         return render(request, 'add_edit_teach.html', {"teach_obj": teach_obj, 'flag': flag})
 
@@ -693,15 +702,16 @@ class Add_Edit_Teach(View):
             return redirect('teach')
         else:
             return render(request, 'add_edit_teach.html', {"teach_obj": teach_obj, 'flag': flag})
+
+
 class DeleteTeach(View):
     def get(self, request, id):
         models.ClassStudyRecord.objects.filter(pk=id).delete()
         return redirect('teach')
 
 
-
-
-#学习情况详情（原生版）
+# 学习情况详情（原生版）
+'''
 # class Studydetail(View):
 #     def get(self,request,ClassStudyRecord_id):
 #         class_obj=models.ClassStudyRecord.objects.get(pk=ClassStudyRecord_id)
@@ -720,10 +730,10 @@ class DeleteTeach(View):
 #         page_ = page_obj.page_html()
 #
 #         if study_objs:
-#             return render(request, 'studydeatil.html', {"study_objs": study_objs, 'record_choices':record_choices,'score_choices':score_choices, 'page': page_,'title':title})
+#             return render(request, 'studydetail.html', {"study_objs": study_objs, 'record_choices':record_choices,'score_choices':score_choices, 'page': page_,'title':title})
 #         else:
 #             page = '<h1>当前信息为空！</h1>'
-#             return render(request, 'studydeatil.html', {'study_objs': study_objs, 'page': page, 'title':title})
+#             return render(request, 'studydetail.html', {'study_objs': study_objs, 'page': page, 'title':title})
 #
 #     def post(self,request,ClassStudyRecord_id):
 #         print(request.POST)
@@ -747,7 +757,7 @@ class DeleteTeach(View):
 #                 models.StudentStudyRecord.objects.filter(pk=study_obj_id).update(**data)
 #
 #         return self.get(request,ClassStudyRecord_id)
-#     '''
+#     """
 #     requset.POST接收到的数据
 #     < QueryDict: {
 # 	'record_choices_9': ['late'],
@@ -761,68 +771,54 @@ class DeleteTeach(View):
 # 	'homework_note_11': ['暂无'],
 # 	'csrfmiddlewaretoken': ['etdn9wjMtmAmM7szNTbtHd41Gcv3wZL2gCMPh1IS0z1WKXWyqGLCHYyY2JJ2dAOo']
 # } >
-#     '''
+#   """  
+'''
 
-
-#学习情况详情（formset版）
+# 学习情况详情（modelformset版）
 from django.forms.models import modelformset_factory
 from django import forms
 from app01 import models
 
+
 class StudyDetailsModelForm(forms.ModelForm):
     class Meta:
-        model=models.StudentStudyRecord
+        model = models.StudentStudyRecord
         # fields='__all__'
-        fields=['student','record','score','homework_note']
+        fields = ['score', 'homework_note']
+
 
 class Studydetail(View):
 
+    def get(self, request, ClassStudyRecord_id):
+        formset_obj = modelformset_factory(model=models.StudentStudyRecord, form=StudyDetailsModelForm, extra=0)
+        class_obj = models.ClassStudyRecord.objects.filter(pk=ClassStudyRecord_id).first()
 
-    def get(self,request,ClassStudyRecord_id):
-        formset_obj=modelformset_factory(model=models.StudentStudyRecord,form=StudyDetailsModelForm,extra=0)
-        class_obj=models.ClassStudyRecord.objects.filter(pk=ClassStudyRecord_id).first()
         title = f'{class_obj.date}{class_obj.class_obj}第{class_obj.day_num}节次'
-        study_objs=models.StudentStudyRecord.objects.filter(classstudyrecord=class_obj)
-        formset_objs=formset_obj(queryset=study_objs)
 
-        per_page_counts = 8
-        page_number = 5
-        from app01 import page  # 导入分页
-        page_obj = page.PageNation(request.path, request.GET.get('page', 1), len(formset_objs) , request,
-                                   per_page_counts, page_number)
-        formset_objs = formset_objs[page_obj.start_num:page_obj.end_num]
-        page_ = page_obj.page_html()
-        if formset_objs:
-            return render(request, 'studydeatil.html', { 'formset_objs':formset_objs, 'page': page_,'title':title})
-        else:
-            page = '<h1>当前信息为空！</h1>'
-            return render(request, 'studydeatil.html', {'formset_objs': formset_objs, 'page': page, 'title':title})
+        study_objs = models.StudentStudyRecord.objects.filter(classstudyrecord=class_obj)
+        formset_objs = formset_obj(queryset=study_objs)
 
-        # return render(request,'studydeatil.html',{'formset_objs':formset_objs})#不分页直接返回
+        return render(request, 'studydetail.html', {'formset_objs': formset_objs, 'title': title})  # 不分页直接返回
 
+    def post(self, request, ClassStudyRecord_id):
+        formset_obj = modelformset_factory(model=models.StudentStudyRecord, form=StudyDetailsModelForm, extra=0)
+        formset_objs = formset_obj(request.POST)
 
-    def post(self,request,ClassStudyRecord_id):
-        print(request.POST)
-        formset_obj=modelformset_factory(model=models.StudentStudyRecord,form=StudyDetailsModelForm,extra=0)
-        formset_objs=formset_obj(request.POST)
-        if formset_objs.is_valid():
+        if formset_objs.is_valid():  # 注意在使用ModelForm时显示的字段（此处校验用）
             formset_objs.save()
         else:
+
             print(formset_objs.errors)
 
         # return self.get(request,ClassStudyRecord_id)#避免一次重定向
-        return redirect(reverse('studydetail',args=(ClassStudyRecord_id,)))#reverse反向解析传参数
-
-
-
-
+        return redirect(reverse('studydetail', args=(ClassStudyRecord_id,)))  # reverse反向解析传参数
 
 
 # 学习信息
 class Study(View):
-    def get(self, request,id=None):
+    def get(self, request, id=None):
         if id:
-            study_objs=models.StudentStudyRecord.objects.filter(classstudyrecord_id=id)
+            study_objs = models.StudentStudyRecord.objects.filter(classstudyrecord_id=id)
         else:
             study_objs = models.StudentStudyRecord.objects.all()
 
@@ -839,7 +835,7 @@ class Study(View):
         #         study_objs = models.Student.objects.filter(**{field + '__contains': val})
         #
         searchfields = ['customer', 'company', 'position', 'date']
-        batch_update_fields_list = ['date','position']
+        batch_update_fields_list = ['date', 'position']
 
         per_page_counts = 8
         page_number = 5
@@ -849,7 +845,7 @@ class Study(View):
         study_objs = study_objs[page_obj.start_num:page_obj.end_num]
         page_ = page_obj.page_html()
 
-        if  study_objs:
+        if study_objs:
 
             return render(request, 'study.html',
                           {"study_objs": study_objs, 'page': page_, 'allfields': StudyModelForm(),
@@ -867,6 +863,8 @@ class Study(View):
             if hasattr(sys.modules[__name__], operation) and callable(getattr(sys.modules[__name__], operation)):
                 status = getattr(sys.modules[__name__], operation)(request, models.StudentStudyRecord)
         return JsonResponse({'status': status, 'operaiton': operation})
+
+
 class Add_Edit_Study(View):
     def get(self, request, id=None):
         obj = models.StudentStudyRecord.objects.filter(pk=id).first()
@@ -874,8 +872,8 @@ class Add_Edit_Study(View):
             flag = 0
         else:
             flag = 1
-            print(obj)
-        study_obj =StudyModelForm(instance=obj)
+
+        study_obj = StudyModelForm(instance=obj)
         return render(request, 'add_edit_study.html', {"study_obj": study_obj, 'flag': flag})
 
     def post(self, request, id=None):
@@ -892,8 +890,447 @@ class Add_Edit_Study(View):
             return redirect('study')
         else:
             return render(request, 'add_edit_study.html', {"study_obj": study_obj, 'flag': flag})
+
+
 class DeleteStudy(View):
     def get(self, request, id):
         models.StudentStudyRecord.objects.filter(pk=id).delete()
         return redirect('study')
 
+
+# 用户信息
+class UserList(View):
+    def get(selfr, request):
+
+        id = request.GET.get('id', None)
+        print(id)
+
+        if id:
+            user_objs = models.UserInfo.objects.filter(role=models.Role.objects.get(pk=id))
+        else:
+            user_objs = models.UserInfo.objects.all()
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), user_objs.count(), request,
+                                   per_page_counts, page_number)
+        user_objs = user_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if user_objs:
+
+            return render(request, 'user.html',
+                          {"user_objs": user_objs, 'page': page_, })
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'user.html', {'user_objs': user_objs, 'page': page, })
+
+
+class Add_Edit_User(View):
+    def get(self, request, id=None):
+        obj = models.UserInfo.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+
+        user_obj = UserModelForm(instance=obj)
+        return render(request, 'add_edit_user.html', {'user_obj': user_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.UserInfo.objects.filter(pk=id).first()
+
+        if id:
+            flag = 0
+            from app01.form import User_EditModelForm
+            user_obj = User_EditModelForm(request.POST)
+        else:
+            flag = 1
+            user_obj = UserModelForm(request.POST)
+
+        if user_obj.is_valid():
+            # print(request.POST)
+            if request.POST.get('is_active'):
+                is_active = True
+            else:
+                is_active = False
+
+            if flag:
+                data = {'username': request.POST.get('username'),
+                        'password': request.POST.get('password'),
+                        'telephone': request.POST.get('telephone'),
+                        'email': request.POST.get('email'),
+                        'is_active': is_active}
+
+                if request.POST.get('is_superuser'):
+                    models.UserInfo.objects.create_superuser(**data)
+                else:
+                    models.UserInfo.objects.create_user(**data)
+
+            else:
+                if request.POST.get('is_superuser'):
+                    is_superuser = True
+                else:
+                    is_superuser = False
+                data = {'telephone': request.POST.get('telephone'),
+                        'email': request.POST.get('email'),
+                        'is_superuser': is_superuser,
+                        'is_active': is_active}
+                models.UserInfo.objects.filter(pk=id).update(**data)
+
+            return redirect('user_list')
+
+        else:
+
+            return render(request, 'add_edit_user.html', {'user_obj': user_obj, 'flag': flag})
+
+
+class DeleteUser(View):
+    def get(self, request, id=None):
+        ret = models.UserInfo.objects.filter(pk=id).delete()
+        if ret:
+            return redirect('user_list')
+
+
+def userpwd_ret(request, id):
+    models.UserInfo.objects.get(pk=id).set_password('123456')
+    return redirect('user_list')
+
+
+# 角色信息
+class RoleList(View):
+    def get(self, request):
+        role_objs = models.Role.objects.all()
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), role_objs.count(), request,
+                                   per_page_counts, page_number)
+        role_objs = role_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if role_objs:
+
+            return render(request, 'role.html',
+                          {"role_objs": role_objs, 'page': page_, })
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'role.html', {'role_objs': role_objs, 'page': page, })
+
+
+class Add_Edit_Role(View):
+    def get(self, request, id=None):
+        obj = models.Role.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        role_obj = RoleModelForm(instance=obj)
+        return render(request, 'add_edit_role.html', {'role_obj': role_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.Role.objects.filter(pk=id).first()
+        role_obj = RoleModelForm(request.POST, instance=obj)
+
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        if role_obj.is_valid():
+            role_obj.save()
+            return redirect('role_list')
+        else:
+            return render(request, 'add_edit_role.html', {'role_obj': role_obj, 'flag': flag})
+
+
+class DeleteRole(View):
+    def get(self, request, id=None):
+        ret = models.Role.objects.filter(pk=id).delete()
+        if ret:
+            return redirect('role_list')
+
+
+# 权限信息
+class PermissionList(View):
+    def get(self, request):
+        id = request.GET.get('id', None)
+        if id:
+            permission_objs = models.Permission.objects.filter(menu=models.Menu.objects.get(pk=id))
+        else:
+            permission_objs = models.Permission.objects.all()
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), permission_objs.count(), request,
+                                   per_page_counts, page_number)
+        permission_objs = permission_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if permission_objs:
+
+            return render(request, 'permission.html',
+                          {"permission_objs": permission_objs, 'page': page_, })
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'permission.html', {'permission_objs': permission_objs, 'page': page, })
+
+
+class Add_Edit_Permission(View):
+    def get(self, request, id=None):
+        obj = models.Permission.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        permission_obj = PermissionModelForm(instance=obj)
+        return render(request, 'add_edit_permission.html', {'permission_obj': permission_obj, 'flag': flag})
+
+    def post(self, request, id=None):
+        obj = models.Permission.objects.filter(pk=id).first()
+        permission_obj = PermissionModelForm(request.POST, instance=obj)
+
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        if permission_obj.is_valid():
+            permission_obj.save()
+            return redirect('permission_list')
+        else:
+            return render(request, 'add_edit_permission.html', {'permission_obj': permission_obj, 'flag': flag})
+
+
+class DeletePermission(View):
+    def get(self, request, id=None):
+        ret = models.Permission.objects.filter(pk=id).delete()
+        if ret:
+            return redirect('permission_list')
+
+
+# 菜单信息
+class MenuList(View):
+    def get(self, request):
+        menu_objs = models.Menu.objects.all()
+
+        per_page_counts = 8
+        page_number = 5
+        from app01 import page  # 导入分页
+        page_obj = page.PageNation(request.path, request.GET.get('page', 1), menu_objs.count(), request,
+                                   per_page_counts, page_number)
+        menu_objs = menu_objs[page_obj.start_num:page_obj.end_num]
+        page_ = page_obj.page_html()
+
+        if menu_objs:
+
+            return render(request, 'menu_list.html',
+                          {"menu_objs": menu_objs, 'page': page_, })
+        else:
+            page = '<h1>当前信息为空！</h1>'
+            return render(request, 'menu_list.html', {'menu_objs': menu_objs, 'page': page, })
+
+
+class Add_Edit_Menu(View):
+    def get(self, request, id=None):
+        obj = models.Menu.objects.filter(pk=id).first()
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        menu_obj = MenuModelForm(instance=obj)
+        from app01.models import ico_list
+        return render(request, 'add_edit_menu.html', {'menu_obj': menu_obj, 'flag': flag, 'ico_list': ico_list})
+
+    def post(self, request, id=None):
+        obj = models.Menu.objects.filter(pk=id).first()
+        menu_obj = MenuModelForm(request.POST, instance=obj)
+
+        if id:
+            flag = 0
+        else:
+            flag = 1
+        if menu_obj.is_valid():
+            menu_obj.save()
+            return redirect('menu_list')
+        else:
+            return render(request, 'add_edit_permission.html', {'menu_obj': menu_obj, 'flag': flag})
+
+
+class DeleteMenu(View):
+    def get(self, request, id=None):
+        ret = models.Menu.objects.filter(pk=id).delete()
+        if ret:
+            return redirect('menu_list')
+
+
+# 权限分配
+class PermissionDistribute(View):
+    def get(self, request):
+        user_objs = models.UserInfo.objects.filter(is_active=True)
+        role_objs = models.Role.objects.all()
+
+        permissions = models.Permission.objects.all().values('pk', 'name', 'url', 'menu__pk', 'pid_id', 'menu__name')
+        permission_dic = {}
+
+        # print(permissions)
+        for permission in permissions:
+            if permission['menu__pk']:
+                if permission['menu__pk'] in permission_dic:
+                    permission_dic[permission['menu__pk']][permission['menu__pk']].append(
+                        {'id': permission['pk'], 'name': permission['name'], 'url': permission['url'],
+                         permission['pk']: []})
+                else:
+                    permission_dic[permission['menu__pk']] = {'menu_pk': permission['menu__pk'],
+                                                              'menu_name': permission['menu__name'],
+                                                              permission['menu__pk']: [
+                                                                  {'id': permission['pk'], 'name': permission['name'],
+                                                                   'url': permission['url'], permission['pk']: []}]}
+
+        # print(permission_dic)
+        for permission in permissions:
+            if permission['pid_id']:
+                for key, menu in permission_dic.items():
+                    for p1 in menu[key]:
+                        if permission['pid_id'] in p1:
+                            p1[p1['id']].append(
+                                {'id': permission['pk'], 'name': permission['name'], 'url': permission['url']})
+
+        # print(permission_dic)
+        """
+        #         {
+        # 	1: {
+        # 		'menu_pk': 1,
+        # 		'menu_name': '客户管理',
+        # 		1: [{
+        # 			'id': 1,
+        # 			'name': '公户信息',
+        # 			'url': '/customer/',
+        # 			1: [{
+        # 				'id': 2,
+        # 				'name': '添加公户',
+        # 				'url': '/customer/add/'
+        # 			}, {
+        # 				'id': 3,
+        # 				'name': '编辑公户',
+        # 				'url': '/customer/edit/(\\d+)/'
+        # 			}, {
+        # 				'id': 4,
+        # 				'name': '删除公户',
+        # 				'url': '/customer/delete/(\\d+)/'
+        # 			}]
+        # 		}, {
+        # 			'id': 5,
+        # 			'name': '私户信息',
+        # 			'url': '/mycustomer/',
+        # 			5: [{
+        # 				'id': 6,
+        # 				'name': '添加私户',
+        # 				'url': '/mycustomer/add/'
+        # 			}, {
+        # 				'id': 7,
+        # 				'name': '编辑私户',
+        # 				'url': '/mycustomer/edit/(\\d+)/'
+        # 			}, {
+        # 				'id': 8,
+        # 				'name': '删除私户',
+        # 				'url': '/mycustomer/delete/(\\d+)/'
+        # 			}]
+        # 		}]
+        # 	},
+        # 	2: {
+        # 		'menu_pk': 2,
+        # 		'menu_name': '记录管理',
+        # 		2: [{
+        # 			'id': 9,
+        # 			'name': '跟进记录',
+        # 			'url': '/followrecord/',
+        # 			9: [{
+        # 				'id': 10,
+        # 				'name': '添加私户跟进记录',
+        # 				'url': '/followrecord/add/'
+        # 			}, {
+        # 				'id': 11,
+        # 				'name': '编辑私户跟进记录',
+        # 				'url': '/followrecord/edit/(\\d+)/'
+        # 			}, {
+        # 				'id': 12,
+        # 				'name': '删除私户跟进记录',
+        # 				'url': '/followrecord/delete/(\\d+)/'
+        # 			}, {
+        # 				'id': 13,
+        # 				'name': '私户跟进记录详情',
+        # 				'url': '/followrecord/more/(\\d+)/'
+        # 			}]
+        # 		}]
+        # 	}
+        # }
+        #         """
+
+
+        permission_others=[{},]
+        for  permission in permissions:
+            if  (not permission['pid_id']):
+                if not permission['menu__pk']:
+                    permission_others.append({'id':permission['pk'],'name':permission['name'],'url':permission['url']})
+            elif  not models.Permission.objects.get(pk=permission['pid_id']).menu:
+                permission_others.append({'id': permission['pk'], 'name': permission['name'], 'url': permission['url']})
+
+
+
+        # 选了用户
+        uid = request.GET.get('uid', None)
+        if uid:
+            uid = int(uid)
+            user_role_obj = models.Role.objects.filter(userinfo__pk=uid)
+            permission_obj = models.Permission.objects.filter(role__userinfo__pk=uid)
+            user_role_idlist = [i.pk for i in user_role_obj]
+            permission_idlist = [i.pk for i in permission_obj]
+            # print(permission_idlist)
+            # 选了角色
+            rid = request.GET.get('rid', None)
+            if rid:
+                rid = int(rid)
+                permission_obj = models.Permission.objects.filter(role__pk=rid)
+                permission_idlist = [i.pk for i in permission_obj]
+
+                return render(request, 'permission_distribute.html',
+                              {'user_objs': user_objs, 'role_objs': role_objs, 'uid': uid, 'rid': rid,
+                               'user_role_idlist': user_role_idlist, 'permission_dic': permission_dic,'permission_others':permission_others,
+                               'permission_idlist': permission_idlist})
+            else:
+
+                return render(request, 'permission_distribute.html',
+                              {'user_objs': user_objs, 'role_objs': role_objs, 'uid': uid,
+                               'user_role_idlist': user_role_idlist, 'permission_dic': permission_dic,'permission_others':permission_others,
+                               'permission_idlist': permission_idlist})
+
+        else:
+            rid = request.GET.get('rid', None)
+            if rid:
+                rid = int(rid)
+                permission_obj = models.Permission.objects.filter(role__pk=rid)
+                permission_idlist = [i.pk for i in permission_obj]
+
+                return render(request, 'permission_distribute.html',
+                              {'user_objs': user_objs, 'role_objs': role_objs, 'rid': rid,
+                               'permission_dic': permission_dic,'permission_others':permission_others,
+                               'permission_idlist': permission_idlist})
+            else:
+
+                return render(request, 'permission_distribute.html',
+                              {'user_objs': user_objs, 'role_objs': role_objs, 'permission_dic': permission_dic,'permission_others':permission_others,})
+
+    def post(self, request):
+
+        permission_list = request.POST.getlist('permission')
+        role_list = request.POST.getlist('role')
+        flag = request.POST.get('flag')
+        rid = request.GET.get('rid')
+        uid = request.GET.get('uid')
+        if flag == 'role':
+            models.UserInfo.objects.get(pk=uid).role.set(role_list)
+        else:
+            models.Role.objects.get(pk=rid).permission.set(permission_list)
+
+        return self.get(request)

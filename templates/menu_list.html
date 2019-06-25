@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+<!--右边内容标题-->
+{% block title %}
+    <h1>后台管理：菜单信息
+        <small>User information</small>
+    </h1>
+    <div class="row" style="margin-top: 15px;">
+        <!--新增用户-->
+        <a href="{% url 'menu_add' %}" class="btn btn-primary btn-sm  col-xs-1 fa fa-arrows-alt "
+           style="margin-left: 30px;width: 90px;height:28px">新增菜单</a>
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>序号</th>
+            <th>一级菜单</th>
+            <th>图标</th>
+            <th>二级菜单权限</th>
+
+
+            <th>操作</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        {% for menu_obj in menu_objs %}
+            <tr>
+
+                <td>{{ forloop.counter }}</td>
+                <td>{{ menu_obj.name }}</td>
+                <td><i class="{{ menu_obj.ico }}"></i></td>
+                <td>
+                    <a href="{% url 'permission_list_menu' %}?id={{ menu_obj.pk }}">详情</a>
+                </td>
+
+
+
+
+                <td>
+                    <a href="{% url 'menu_edit' menu_obj.pk %}" class="btn btn-warning btn-xs"
+                       title="编辑"><i
+                            class="fa fa-edit "></i></a>
+                    <a href="{% url 'menu_delete' menu_obj.pk %}" class="btn btn-danger btn-xs"
+                       title="删除"><i
+                            class="fa fa-trash-o fa-lg "></i></a>
+                </td>
+
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+
+
+{% endblock %}
+
+

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+<!--右边内容标题-->
+{% block title %}
+    <h1>后台管理：用户信息
+        <small>User information</small>
+    </h1>
+    <div class="row" style="margin-top: 15px;">
+        <!--新增用户-->
+        <a href="{% url 'user_add' %}" class="btn btn-primary btn-sm  col-xs-1 fa fa-user-plus "
+           style="margin-left: 30px;width: 90px;height:28px">新增用户</a>
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>序号</th>
+            <th>用户名</th>
+            <th>超级用户</th>
+            <th>状态</th>
+            <th>创建日期</th>
+            <th>最后登录</th>
+            <th>联系电话</th>
+            <th>工作邮箱</th>
+            <th>密码初始化</th>
+            <th>操作</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        {% for user_obj in user_objs %}
+            <tr>
+
+                <td>{{ forloop.counter }}</td>
+                <td>{{ user_obj.username }}</td>
+                <td>
+                    {% if user_obj.is_superuser %}
+                        <i class="fa fa-check"></i>
+                    {% else %}
+                        <i class="fa fa-remove"></i>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user_obj.is_active %}
+                        <i class="fa fa-check"></i>
+                    {% else %}
+                        <i class="fa fa-remove"></i>
+                    {% endif %}
+                </td>
+                {#                <td>{{  }}</td>#}
+                <td>{{ user_obj.last_login|date:'Y-m-d'|default:'----' }}</td>
+                <td>{{ user_obj.date_joined|date:'Y-m-d'|default:'----' }}</td>
+                <td>{{ user_obj.telephone|default:'----' }}</td>
+                <td>{{ user_obj.email|default:'----' }}</td>
+                <td><a href="{% url 'userpwd_ret' user_obj.pk %}" class="btn btn-xs btn-default"
+                       title="默认密码：123456">初始化</a></td>
+
+                <td>
+                    <a href="{% url 'user_edit' user_obj.pk %}" class="btn btn-warning btn-xs"
+                       title="编辑"><i
+                            class="fa fa-edit "></i></a>
+                    <a href="{% url 'user_delete' user_obj.pk %}" class="btn btn-danger btn-xs"
+                       title="删除"><i
+                            class="fa fa-trash-o fa-lg "></i></a>
+                </td>
+
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+
+
+{% endblock %}
+
+

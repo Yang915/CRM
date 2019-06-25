@@ -175,3 +175,84 @@ class StudyModelForm(forms.ModelForm):
                 self.fields[field].widget.attrs.update({'class': 'form-control'})
                 self.fields[field].error_messages = {'required': '该字段不能为空！'}
 
+
+
+# 用户信息
+class UserModelForm(forms.ModelForm):
+    class Meta:
+        model=models.UserInfo
+        fields=['username','password','telephone','email','is_active','is_superuser',]
+        widgets={
+            'password':forms.TextInput(attrs={'value':'123456'})
+        }
+        labels={
+            'username':'用户名',
+            'password':'密码',
+            'email':'工作邮箱',
+            'is_active':'激活状态',
+            'is_superuser':'超级管理权限'
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            if field in ['is_active','is_superuser']:
+                continue
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}
+class User_EditModelForm(forms.ModelForm):
+    class Meta:
+        model = models.UserInfo
+        fields = [ 'telephone', 'email', 'is_active', 'is_superuser', ]
+
+
+# 角色信息
+class RoleModelForm(forms.ModelForm):
+    class Meta:
+        model=models.Role
+        fields=['name']
+
+        labels={
+            'name':'角色',
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}
+
+#权限信息
+class PermissionModelForm(forms.ModelForm):
+    class Meta:
+        model=models.Permission
+        fields='__all__'
+
+        labels={
+            'name':'权限',
+            'url':'URL',
+            'menu':'归属一级菜单',
+            'pid':'归属二级权限菜单',
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}
+
+
+
+#权限信息
+class MenuModelForm(forms.ModelForm):
+    class Meta:
+        model=models.Menu
+        fields='__all__'
+
+        labels={
+            'name':'权限',
+            'ico':'图标',
+
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            self.fields[field].error_messages = {'required': '该字段不能为空！'}

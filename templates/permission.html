@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+<!--右边内容标题-->
+{% block title %}
+    <h1>后台管理：权限信息
+        <small>Permission information</small>
+    </h1>
+    <div class="row" style="margin-top: 15px;">
+        <!--新增用户-->
+        <a href="{% url 'permission_add' %}" class="btn btn-primary btn-sm  col-xs-1 fa fa-user-circle "
+           style="margin-left: 30px;width: 90px;height:28px">新增权限</a>
+    </div>
+
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+    <table class="table table-hover table-bordered table-responsive tab-content text-center">
+        <thead>
+        <tr>
+            <th>序号</th>
+            <th>权限</th>
+            <th>URL</th>
+            <th>归属一级菜单</th>
+            <th>归属二级权限菜单</th>
+            <th>操作</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        {% for permission_obj in permission_objs %}
+            <tr>
+
+                <td>{{ forloop.counter }}</td>
+                <td>{{ permission_obj.name }}</td>
+                <td>{{ permission_obj.url }}</td>
+                <td>{% if permission_obj.menu %}
+                    {{ permission_obj.menu }}
+                {% else %}
+                    <i class="fa fa-remove"></i>
+                {% endif %}
+                </td>
+                <td>{% if permission_obj.pid %}{{ permission_obj.pid }}
+                {% else %}<i class="fa fa-remove"></i>
+                {% endif %}</td>
+
+
+                <td>
+                    <a href="{% url 'permission_edit' permission_obj.pk %}" class="btn btn-warning btn-xs"
+                       title="编辑"><i
+                            class="fa fa-edit "></i></a>
+                    <a href="{% url 'permission_delete' permission_obj.pk %}" class="btn btn-danger btn-xs"
+                       title="删除"><i
+                            class="fa fa-trash-o fa-lg "></i></a>
+                </td>
+
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+    {{ page|safe }}
+
+
+{% endblock %}
+
+<!--js代码-->
+{% block js %}
+
+
+{% endblock %}
+
+

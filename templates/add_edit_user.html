@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+<!--右边内容标题-->
+{% block title %}
+    <h1>
+        {% if flag %}
+            新增用户
+            <small>Add User</small>
+        {% else %}
+            编辑用户
+            <small>Edit User</small>
+        {% endif %}
+    </h1>
+{% endblock %}
+
+
+<!--右边内容部分-->
+{% block content %}
+
+
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-6 col-xs-offset-2">
+                <form action="" method="post" novalidate class="form-horizontal">
+
+                    {% for field in user_obj %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}"
+                                   class="col-sm-3 control-label">{{ field.label }}</label>
+                            <div class="col-xs-9">
+                                {{ field }}
+                                <p class="text-danger"> {{ field.errors.0 }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% csrf_token %}
+                    <br><input type="submit" class="btn btn-success pull-right">
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+{% endblock %}
+<!--js代码-->
+{% block js %}
+    <script>
+    var flag={{ flag }}
+    if(! flag){
+        $('#id_username').attr('onmousedown','return false');
+        $('#id_password').parent().parent().attr('hidden',true).attr('disabled',true);
+    }
+    </script>
+
+{% endblock %}
